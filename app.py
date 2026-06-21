@@ -9,6 +9,7 @@
 import os
 from datetime import date
 from functools import wraps
+from io import BytesIO
 
 from flask import (
     Flask,
@@ -17,6 +18,7 @@ from flask import (
     redirect,
     render_template,
     request,
+    send_file,
     send_from_directory,
     session,
     url_for,
@@ -182,6 +184,66 @@ def _register_routes(app: Flask) -> None:
         )
         return Response(svg, mimetype="image/svg+xml",
                         headers={"Cache-Control": "public, max-age=86400"})
+
+    @app.route("/characters.xlsx")
+    def characters_xlsx():
+        """60キャラクターを軍勢・名前付きの Excel でダウンロード（ログイン不要）。"""
+        from openpyxl import Workbook
+        from openpyxl.styles import Alignment, Font, PatternFill
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "三国志キャラ一覧"
+
+        headers = ["No.", "干支", "名前", "読み", "軍勢", "肩書き"]
+        ws.append(headers)
+
+        header_fill = PatternFill("solid", fgColor="1A1A2E")
+        header_font = Font(bold=True, color="FFFFFF")
+        for cell in ws[1]:
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+
+        # 軍勢→名前の順に並べる
+        faction_order = {"魏": 0, "蜀": 1, "呉": 2, "群雄": 3}
+        chars = sorted(
+            sangokushi.all_characters(),
+            key=lambda c: (faction_order.get(c.faction, 9), c.index),
+        )
+
+        for c in chars:
+            ws.append([
+                c.index + 1,
+                shichu.ganzhi_name(c.index),
+                c.name,
+                c.yomi,
+                c.faction,
+                c.title,
+            ])
+            # 軍勢セルを勢力色で塗る
+            row = ws.max_row
+            fill = PatternFill("solid", fgColor=c.color.lstrip("#").upper())
+            faction_cell = ws.cell(row=row, column=5)
+            faction_cell.fill = fill
+            faction_cell.font = Font(bold=True, color="FFFFFF")
+            faction_cell.alignment = Alignment(horizontal="center")
+
+        widths = [6, 8, 14, 18, 8, 28]
+        for i, w in enumerate(widths, start=1):
+            ws.column_dimensions[chr(64 + i)].width = w
+        ws.freeze_panes = "A2"
+
+        buf = BytesIO()
+        wb.save(buf)
+        buf.seek(0)
+        return send_file(
+            buf,
+            mimetype="application/vnd.openxmlformats-officedocument."
+                     "spreadsheetml.sheet",
+            as_attachment=True,
+            download_name="sangokushi_characters.xlsx",
+        )
 
     @app.route("/aisho", methods=["GET", "POST"])
     @login_required
