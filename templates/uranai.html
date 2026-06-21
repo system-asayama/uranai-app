@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}四柱推命 日柱占い{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>🔮 四柱推命 日柱占い</h1>
+  <p class="muted">
+    生年月日から「日柱（にっちゅう）」の干支を割り出し、六十干支
+    （60パターン）であなたの本質を占います。日柱はあなたの素の性格や
+    対人運を映す、四柱推命の中心となる柱です。
+  </p>
+
+  <form method="post" action="{{ url_for('uranai') }}">
+    <div class="date-row">
+      <div>
+        <label for="year">年（西暦）</label>
+        <input type="number" id="year" name="year" min="1873" max="2100"
+               placeholder="1990" value="{{ form.year }}" required>
+      </div>
+      <div>
+        <label for="month">月</label>
+        <input type="number" id="month" name="month" min="1" max="12"
+               placeholder="5" value="{{ form.month }}" required>
+      </div>
+      <div>
+        <label for="day">日</label>
+        <input type="number" id="day" name="day" min="1" max="31"
+               placeholder="15" value="{{ form.day }}" required>
+      </div>
+    </div>
+
+    <label class="checkbox">
+      <input type="checkbox" name="after_23" {% if form.after_23 %}checked{% endif %}>
+      生まれた時刻が <strong>23時以降</strong> である
+      <span class="muted">（四柱推命では日付の変わり目が23時のため）</span>
+    </label>
+
+    <button type="submit">占う</button>
+  </form>
+</div>
+
+{% if result %}
+<div class="card fortune">
+  <div class="fortune-head">
+    <div class="ganzhi">{{ result.name }}</div>
+    <div class="yomi">{{ result.yomi }}</div>
+  </div>
+  <p class="catch">「{{ result.catch }}」</p>
+
+  <div class="tags">
+    <span class="tag">日柱 No.{{ result.index + 1 }} / 60</span>
+    <span class="tag">五行：{{ result.element }}（{{ result.yinyang }}）</span>
+    <span class="tag">十二支：{{ result.animal }}</span>
+  </div>
+
+  <h3>🌱 性格・本質</h3>
+  <p>{{ result.seikaku }}</p>
+
+  <h3>💼 仕事・才能</h3>
+  <p>{{ result.shigoto }}</p>
+
+  <h3>💖 恋愛・対人</h3>
+  <p>{{ result.renai }}</p>
+
+  <h3>✨ ラッキーポイント</h3>
+  <p>{{ result.lucky }}</p>
+
+  <p class="muted note">
+    ※本占いは日柱の干支のみを用いた簡易鑑定です。正式な四柱推命では
+    年柱・月柱・時柱も合わせて総合的に判断します。
+  </p>
+</div>
+{% endif %}
+
+<div class="card">
+  <p><a class="link" href="{{ url_for('uranai_list') }}">▶ 六十干支の早見表をみる</a></p>
+</div>
+
+<style>
+  .date-row { display:flex; gap:12px; }
+  .date-row > div { flex:1; }
+  label.checkbox { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap;
+                   margin-top:16px; color:var(--text); font-size:14px; }
+  label.checkbox input { width:auto; }
+  .fortune { background:linear-gradient(160deg,#2a2350,#3b2f6b); color:#fff; }
+  .fortune .muted { color:#cfc8ee; }
+  .fortune h3 { margin:18px 0 6px; font-size:16px; color:#ffe3a3; }
+  .fortune-head { display:flex; align-items:baseline; gap:12px; }
+  .ganzhi { font-size:44px; font-weight:800; letter-spacing:4px; }
+  .yomi { font-size:16px; color:#cfc8ee; }
+  .catch { font-size:18px; font-weight:600; margin:8px 0 16px; }
+  .tags { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px; }
+  .tag { background:rgba(255,255,255,.15); border-radius:999px;
+         padding:4px 12px; font-size:13px; }
+  .fortune .note { margin-top:20px; font-size:12px; }
+</style>
+{% endblock %}

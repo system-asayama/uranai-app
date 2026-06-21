@@ -1,11 +1,13 @@
-"""管理者と利用者がログインできるシンプルな認証システム。
+"""四柱推命（日柱）60干支占いアプリ ＋ ログイン認証システム。
 
+- 生年月日から日柱の干支（六十干支）を算出する占い機能
 - セッションベースの認証
 - パスワードはハッシュ化して保存
 - admin / user のロールによるアクセス制御
 - 管理者はユーザー一覧・作成・ロール変更・削除が可能
 """
 import os
+from datetime import date
 from functools import wraps
 
 from flask import (
@@ -18,6 +20,7 @@ from flask import (
     url_for,
 )
 
+import shichu
 from models import ROLE_ADMIN, ROLE_USER, ROLES, User, db
 
 
@@ -108,9 +111,40 @@ def _register_routes(app: Flask) -> None:
 
     @app.route("/")
     def index():
-        if current_user() is not None:
-            return redirect(url_for("dashboard"))
-        return redirect(url_for("login"))
+        # トップは誰でも使える四柱推命占いページ
+        return redirect(url_for("uranai"))
+
+    @app.route("/uranai", methods=["GET", "POST"])
+    def uranai():
+        """生年月日から日柱の干支を鑑定する（ログイン不要）。"""
+        result = None
+        form = {"year": "", "month": "", "day": "", "after_23": False}
+
+        if request.method == "POST":
+            form["year"] = (request.form.get("year") or "").strip()
+            form["month"] = (request.form.get("month") or "").strip()
+            form["day"] = (request.form.get("day") or "").strip()
+            form["after_23"] = request.form.get("after_23") == "on"
+
+            try:
+                birth = date(int(form["year"]), int(form["month"]), int(form["day"]))
+            except (ValueError, TypeError):
+                flash("正しい生年月日を入力してください。", "error")
+            else:
+                if birth.year < 1873:
+                    # 日本がグレゴリオ暦を採用した1873年以降のみ対応
+                    flash("1873年以降の日付を入力してください。", "error")
+                elif birth > date.today():
+                    flash("未来の日付は占えません。", "error")
+                else:
+                    result = shichu.divine(birth, after_23=form["after_23"])
+
+        return render_template("uranai.html", result=result, form=form)
+
+    @app.route("/uranai/list")
+    def uranai_list():
+        """六十干支の一覧（早見表）。"""
+        return render_template("uranai_list.html", fortunes=shichu.all_fortunes())
 
     @app.route("/register", methods=["GET", "POST"])
     def register():

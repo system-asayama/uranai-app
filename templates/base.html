@@ -40,15 +40,16 @@
 </head>
 <body>
   <header>
-    <span class="brand">🔐 ログインシステム</span>
+    <span class="brand">🔮 四柱推命 占い</span>
     <nav>
+      <a href="{{ url_for('uranai') }}">占う</a>
+      <a href="{{ url_for('uranai_list') }}">早見表</a>
       {% if current_user %}
         <a href="{{ url_for('dashboard') }}">ダッシュボード</a>
         {% if current_user.is_admin %}<a href="{{ url_for('admin_users') }}">ユーザー管理</a>{% endif %}
         <a href="{{ url_for('logout') }}">ログアウト</a>
       {% else %}
-        <a href="{{ url_for('login') }}">利用者ログイン</a>
-        <a href="{{ url_for('admin_login') }}">管理者ログイン</a>
+        <a href="{{ url_for('login') }}">ログイン</a>
         <a href="{{ url_for('register') }}">新規登録</a>
       {% endif %}
     </nav>
