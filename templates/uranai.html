@@ -1,12 +1,13 @@
 {% extends "base.html" %}
-{% block title %}四柱推命 日柱占い{% endblock %}
+{% block title %}四柱推命 命式占い{% endblock %}
 {% block content %}
 <div class="card">
-  <h1>🔮 四柱推命 日柱占い</h1>
+  <h1>🔮 四柱推命 命式占い</h1>
   <p class="muted">
-    生年月日から「日柱（にっちゅう）」の干支を割り出し、六十干支
-    （60パターン）であなたの本質を占います。日柱はあなたの素の性格や
-    対人運を映す、四柱推命の中心となる柱です。
+    生年月日と時刻から <strong>四柱（年柱・月柱・日柱・時柱）</strong> の命式を
+    割り出し、日柱の六十干支（60パターン）であなたの本質を、五行バランスで
+    運気の傾向を占います。年柱は「立春」、月柱は「節入り」、日時は日本標準時
+    (JST)・23時切り替えで計算します。
   </p>
 
   <form method="post" action="{{ url_for('uranai') }}">
@@ -28,45 +29,104 @@
       </div>
     </div>
 
-    <label class="checkbox">
-      <input type="checkbox" name="after_23" {% if form.after_23 %}checked{% endif %}>
-      生まれた時刻が <strong>23時以降</strong> である
-      <span class="muted">（四柱推命では日付の変わり目が23時のため）</span>
-    </label>
+    <div class="date-row">
+      <div>
+        <label for="hour">時（任意・0〜23）</label>
+        <input type="number" id="hour" name="hour" min="0" max="23"
+               placeholder="不明可" value="{{ form.hour }}">
+      </div>
+      <div>
+        <label for="minute">分（任意・0〜59）</label>
+        <input type="number" id="minute" name="minute" min="0" max="59"
+               placeholder="0" value="{{ form.minute }}">
+      </div>
+    </div>
+    <p class="muted small">※時刻が不明な場合は空欄でOK（時柱は省略されます）。</p>
 
-    <button type="submit">占う</button>
+    <button type="submit">命式を出して占う</button>
   </form>
 </div>
 
 {% if result %}
+{% set f = result.fortune %}
+<div class="card">
+  <h2 class="meishiki-title">あなたの命式</h2>
+  <table class="meishiki">
+    <thead>
+      <tr><th></th><th>年柱</th><th>月柱</th><th>日柱</th><th>時柱</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th>天干</th>
+        {% for p in [result.year, result.month, result.day, result.hour] %}
+          {% if p %}
+          <td class="kan el-{{ p.stem_element }}">{{ p.stem }}</td>
+          {% else %}<td class="unknown">不明</td>{% endif %}
+        {% endfor %}
+      </tr>
+      <tr>
+        <th>地支</th>
+        {% for p in [result.year, result.month, result.day, result.hour] %}
+          {% if p %}
+          <td class="shi el-{{ p.branch_element }}">{{ p.branch }}</td>
+          {% else %}<td class="unknown">―</td>{% endif %}
+        {% endfor %}
+      </tr>
+      <tr class="yomi-row">
+        <th>読み</th>
+        {% for p in [result.year, result.month, result.day, result.hour] %}
+          <td>{% if p %}{{ p.yomi }}{% else %}―{% endif %}</td>
+        {% endfor %}
+      </tr>
+    </tbody>
+  </table>
+  <p class="muted small">
+    日主（あなたの本体）＝ <strong>日干「{{ result.day_master }}」（五行：{{ result.day_master_element }}）</strong>
+    ／ 立春で区切った生まれ年は <strong>{{ result.solar_year }}年（{{ result.year.name }}年）</strong>。
+    {% if not result.time_known %}<br>時刻が未入力のため時柱は省略しています。{% endif %}
+  </p>
+</div>
+
+<div class="card">
+  <h2 class="meishiki-title">五行バランス</h2>
+  <div class="gogyo">
+    {% for el in ["木","火","土","金","水"] %}
+    <div class="gogyo-item">
+      <div class="gogyo-label el-{{ el }}">{{ el }}</div>
+      <div class="bar"><span class="bar-fill el-bg-{{ el }}"
+           style="width: {{ (result.element_counts[el] / (8 if result.time_known else 6) * 100) | round }}%"></span></div>
+      <div class="gogyo-count">{{ result.element_counts[el] }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  <p class="muted small">命式{{ 8 if result.time_known else 6 }}文字（天干・地支）に含まれる五行の数です。多い五行は強み、ゼロの五行は補うと良いとされます。</p>
+</div>
+
 <div class="card fortune">
   <div class="fortune-head">
-    <div class="ganzhi">{{ result.name }}</div>
-    <div class="yomi">{{ result.yomi }}</div>
+    <div class="ganzhi">{{ result.day.name }}</div>
+    <div class="yomi">日柱・{{ f.yomi }}</div>
   </div>
-  <p class="catch">「{{ result.catch }}」</p>
+  <p class="catch">「{{ f.catch }}」</p>
 
   <div class="tags">
-    <span class="tag">日柱 No.{{ result.index + 1 }} / 60</span>
-    <span class="tag">五行：{{ result.element }}（{{ result.yinyang }}）</span>
-    <span class="tag">十二支：{{ result.animal }}</span>
+    <span class="tag">日柱 No.{{ f.index + 1 }} / 60</span>
+    <span class="tag">五行：{{ f.element }}（{{ f.yinyang }}）</span>
+    <span class="tag">十二支：{{ f.animal }}</span>
   </div>
 
   <h3>🌱 性格・本質</h3>
-  <p>{{ result.seikaku }}</p>
-
+  <p>{{ f.seikaku }}</p>
   <h3>💼 仕事・才能</h3>
-  <p>{{ result.shigoto }}</p>
-
+  <p>{{ f.shigoto }}</p>
   <h3>💖 恋愛・対人</h3>
-  <p>{{ result.renai }}</p>
-
+  <p>{{ f.renai }}</p>
   <h3>✨ ラッキーポイント</h3>
-  <p>{{ result.lucky }}</p>
+  <p>{{ f.lucky }}</p>
 
   <p class="muted note">
-    ※本占いは日柱の干支のみを用いた簡易鑑定です。正式な四柱推命では
-    年柱・月柱・時柱も合わせて総合的に判断します。
+    ※性格鑑定は四柱の中心となる日柱（六十干支）にもとづく鑑定です。
+    年柱・月柱・時柱や蔵干・通変星まで読むと、より精緻な鑑定になります。
   </p>
 </div>
 {% endif %}
@@ -76,11 +136,34 @@
 </div>
 
 <style>
-  .date-row { display:flex; gap:12px; }
+  .date-row { display:flex; gap:12px; margin-bottom:4px; }
   .date-row > div { flex:1; }
-  label.checkbox { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap;
-                   margin-top:16px; color:var(--text); font-size:14px; }
-  label.checkbox input { width:auto; }
+  .small { font-size:12px; }
+  .meishiki-title { font-size:18px; margin-top:0; }
+  table.meishiki { width:100%; border-collapse:separate; border-spacing:6px; }
+  table.meishiki th { color:var(--muted); font-weight:600; font-size:13px; text-align:center; }
+  table.meishiki td { text-align:center; border-radius:8px; }
+  td.kan, td.shi { font-size:30px; font-weight:800; color:#fff; padding:10px 0; }
+  td.unknown { color:var(--muted); background:#f1f3f5; padding:10px 0; }
+  tr.yomi-row td { font-size:11px; color:var(--muted); }
+  /* 五行カラー（文字色／背景） */
+  .el-木 { color:#2b8a3e; } .el-火 { color:#e03131; } .el-土 { color:#e8950c; }
+  .el-金 { color:#868e96; } .el-水 { color:#1971c2; }
+  td.kan.el-木, td.shi.el-木, .el-bg-木 { background:#37b24d; }
+  td.kan.el-火, td.shi.el-火, .el-bg-火 { background:#f03e3e; }
+  td.kan.el-土, td.shi.el-土, .el-bg-土 { background:#f59f00; }
+  td.kan.el-金, td.shi.el-金, .el-bg-金 { background:#adb5bd; }
+  td.kan.el-水, td.shi.el-水, .el-bg-水 { background:#1c7ed6; }
+  td.kan.el-木, td.kan.el-火, td.kan.el-土, td.kan.el-金, td.kan.el-水,
+  td.shi.el-木, td.shi.el-火, td.shi.el-土, td.shi.el-金, td.shi.el-水 { color:#fff; }
+  /* 五行バー */
+  .gogyo-item { display:flex; align-items:center; gap:10px; margin:6px 0; }
+  .gogyo-label { width:28px; height:28px; line-height:28px; text-align:center;
+                 border-radius:50%; font-weight:800; background:#f1f3f5; }
+  .bar { flex:1; background:#f1f3f5; border-radius:999px; height:14px; overflow:hidden; }
+  .bar-fill { display:block; height:100%; border-radius:999px; min-width:2px; }
+  .gogyo-count { width:24px; text-align:right; font-weight:700; }
+  /* 日柱鑑定カード */
   .fortune { background:linear-gradient(160deg,#2a2350,#3b2f6b); color:#fff; }
   .fortune .muted { color:#cfc8ee; }
   .fortune h3 { margin:18px 0 6px; font-size:16px; color:#ffe3a3; }
@@ -89,8 +172,7 @@
   .yomi { font-size:16px; color:#cfc8ee; }
   .catch { font-size:18px; font-weight:600; margin:8px 0 16px; }
   .tags { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px; }
-  .tag { background:rgba(255,255,255,.15); border-radius:999px;
-         padding:4px 12px; font-size:13px; }
+  .tag { background:rgba(255,255,255,.15); border-radius:999px; padding:4px 12px; font-size:13px; }
   .fortune .note { margin-top:20px; font-size:12px; }
 </style>
 {% endblock %}

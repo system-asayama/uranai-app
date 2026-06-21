@@ -1,17 +1,19 @@
-"""四柱推命（日柱）60干支占いのコアロジック。
+"""四柱推命のコアロジック（四柱＝年柱・月柱・日柱・時柱 ＋ 日柱60干支占い）。
 
-生年月日から日柱（その日の干支）を算出し、六十干支それぞれの
-性格・運勢の鑑定文を返す。
+生年月日（と生まれた時刻）から命式（四柱）を算出する。
 
-日柱の干支は次の式で求められる（甲子=0）::
+- 日柱の干支は次の式で求める（甲子=0）::
 
-    干支index = (ユリウス通日 JDN + 49) % 60
+      干支index = (ユリウス通日 JDN + 49) % 60
 
-基準: 2000-01-01 = 戊午日（index 54）。
-JDN(2000-01-01)=2451545 を用いて検証済み。
+  基準: 2000-01-01 = 戊午日（index 54）。
+- 年柱は元日ではなく「立春」、月柱は「節入り（節気）」で切り替わるため、
+  太陽黄経を天文計算（Meeus 簡易式）で求めて境界を判定する。
+- 時刻はすべて日本標準時(JST=UT+9)で扱う。
 """
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from datetime import date
 
@@ -31,6 +33,14 @@ BRANCH_YOMI = ["ね", "うし", "とら", "う", "たつ", "み",
                "うま", "ひつじ", "さる", "とり", "いぬ", "い"]
 BRANCH_ANIMAL = ["鼠", "牛", "虎", "兎", "龍", "蛇",
                  "馬", "羊", "猿", "鶏", "犬", "猪"]
+# 十二支の五行（子=水 .. 亥=水）
+BRANCH_ELEMENT = ["水", "土", "木", "木", "土", "火",
+                  "火", "土", "金", "金", "土", "水"]
+
+# 五行（表示順）
+ELEMENTS = ["木", "火", "土", "金", "水"]
+ELEMENT_COLOR = {"木": "#37b24d", "火": "#f03e3e", "土": "#f59f00",
+                 "金": "#adb5bd", "水": "#1c7ed6"}
 
 
 def julian_day_number(d: date) -> int:
@@ -597,3 +607,211 @@ def divine(birth: date, after_23: bool = False) -> Fortune:
 def all_fortunes() -> list[Fortune]:
     """六十干支すべての鑑定結果を一覧で返す。"""
     return [get_fortune(i) for i in range(60)]
+
+
+# ===========================================================================
+# 四柱（年柱・月柱・日柱・時柱）の算出
+# ---------------------------------------------------------------------------
+# 年柱は「立春」、月柱は「節入り（節気）」で切り替わるため、太陽黄経を
+# 天文計算で求めて境界を判定する。時刻はすべて JST(UT+9) で扱う。
+# ===========================================================================
+
+def _delta_t_seconds(year: int) -> float:
+    """年から ΔT（TT − UT, 秒）を概算する（Espenak & Meeus の多項式）。"""
+    y = year
+    if y < 1860:
+        return 7.0
+    if y <= 1900:
+        t = y - 1860
+        return (7.62 + 0.5737 * t - 0.251754 * t**2 + 0.01680668 * t**3
+                - 0.0004473624 * t**4 + t**5 / 233174.0)
+    if y <= 1920:
+        t = y - 1900
+        return (-2.79 + 1.494119 * t - 0.0598939 * t**2
+                + 0.0061966 * t**3 - 0.000197 * t**4)
+    if y <= 1941:
+        t = y - 1920
+        return 21.20 + 0.84493 * t - 0.076100 * t**2 + 0.0020936 * t**3
+    if y <= 1961:
+        t = y - 1950
+        return 29.07 + 0.407 * t - t**2 / 233.0 + t**3 / 2547.0
+    if y <= 1986:
+        t = y - 1975
+        return 45.45 + 1.067 * t - t**2 / 260.0 - t**3 / 718.0
+    if y <= 2005:
+        t = y - 2000
+        return (63.86 + 0.3345 * t - 0.060374 * t**2 + 0.0017275 * t**3
+                + 0.000651814 * t**4 + 0.00002373599 * t**5)
+    if y <= 2050:
+        t = y - 2000
+        return 62.92 + 0.32217 * t + 0.005589 * t**2
+    if y <= 2150:
+        return -20.0 + 32.0 * ((y - 1820) / 100.0) ** 2 - 0.5628 * (2150 - y)
+    return 67.0
+
+
+def _sun_apparent_longitude(jde: float) -> float:
+    """力学時(TT)のユリウス日 jde における太陽の視黄経（度, 0..360）。"""
+    t = (jde - 2451545.0) / 36525.0
+    l0 = 280.46646 + 36000.76983 * t + 0.0003032 * t * t
+    m = 357.52911 + 35999.05029 * t - 0.0001537 * t * t
+    mr = math.radians(m % 360.0)
+    c = ((1.914602 - 0.004817 * t - 0.000014 * t * t) * math.sin(mr)
+         + (0.019993 - 0.000101 * t) * math.sin(2 * mr)
+         + 0.000289 * math.sin(3 * mr))
+    true_long = l0 + c
+    omega = 125.04 - 1934.136 * t
+    lam = true_long - 0.00569 - 0.00478 * math.sin(math.radians(omega % 360.0))
+    return lam % 360.0
+
+
+def _jd_ut_midnight(d: date) -> float:
+    """その日の 00:00 UT のユリウス日（浮動小数）。"""
+    return julian_day_number(d) - 0.5
+
+
+def _sun_longitude_at_ut(jd_ut: float, year: int) -> float:
+    """UT のユリウス日における太陽視黄経（ΔT 補正込み）。"""
+    return _sun_apparent_longitude(jd_ut + _delta_t_seconds(year) / 86400.0)
+
+
+def solar_term_jd_ut(year: int, target_longitude: float, guess_doy: int) -> float:
+    """指定年における太陽視黄経 = target_longitude の瞬間（UT のユリウス日）。
+
+    guess_doy はその節気の概略の年内通日（初期値用）。
+    """
+    jd = _jd_ut_midnight(date(year, 1, 1)) + guess_doy
+    for _ in range(12):
+        lam = _sun_longitude_at_ut(jd, year)
+        diff = (lam - target_longitude + 180.0) % 360.0 - 180.0
+        jd -= diff / 0.98565  # 太陽は約 0.98565 度/日 進む
+    return jd
+
+
+def lichun_jd_ut(year: int) -> float:
+    """その年の立春（太陽視黄経 315 度）の UT ユリウス日。"""
+    return solar_term_jd_ut(year, 315.0, 34)
+
+
+@dataclass
+class Pillar:
+    """一柱（天干＋地支）。"""
+    stem_index: int
+    branch_index: int
+
+    @property
+    def stem(self) -> str:
+        return STEMS[self.stem_index]
+
+    @property
+    def branch(self) -> str:
+        return BRANCHES[self.branch_index]
+
+    @property
+    def name(self) -> str:
+        return self.stem + self.branch
+
+    @property
+    def yomi(self) -> str:
+        return STEM_YOMI[self.stem_index] + BRANCH_YOMI[self.branch_index]
+
+    @property
+    def stem_element(self) -> str:
+        return STEM_ELEMENT[self.stem_index]
+
+    @property
+    def branch_element(self) -> str:
+        return BRANCH_ELEMENT[self.branch_index]
+
+    @property
+    def animal(self) -> str:
+        return BRANCH_ANIMAL[self.branch_index]
+
+
+@dataclass
+class FourPillars:
+    """命式（四柱）。"""
+    year: Pillar
+    month: Pillar
+    day: Pillar
+    hour: Pillar | None          # 出生時刻不明なら None
+    day_index: int               # 日柱の干支index(0..59)＝60パターン占いの基準
+    solar_year: int              # 立春で区切った年
+    time_known: bool
+    element_counts: dict          # 五行ごとの数（命式8文字。時柱不明なら6文字）
+    day_master: str               # 日干（その人の本体）
+    day_master_element: str       # 日干の五行
+    fortune: Fortune              # 日柱の鑑定（60パターン）
+
+
+def _pillar_from_index(index: int) -> Pillar:
+    return Pillar(index % 10, index % 12)
+
+
+def compute_four_pillars(
+    birth: date, hour: int | None = None, minute: int = 0
+) -> FourPillars:
+    """生年月日（と JST の出生時刻）から命式（四柱）を算出する。
+
+    hour が None の場合は出生時刻不明とみなし、時柱を省略する
+    （年柱・月柱の境界判定には正午を仮定する）。
+    """
+    time_known = hour is not None
+    h = hour if time_known else 12
+    mi = minute if time_known else 0
+
+    # 出生時刻を UT のユリウス日に変換（JST = UT + 9h）
+    jd_birth_ut = _jd_ut_midnight(birth) + (h + mi / 60.0) / 24.0 - 9.0 / 24.0
+
+    # --- 年柱（立春で切り替え）-------------------------------------------
+    lichun = lichun_jd_ut(birth.year)
+    solar_year = birth.year if jd_birth_ut >= lichun else birth.year - 1
+    year_index = (solar_year - 4) % 60
+    year_stem = year_index % 10
+    year_pillar = _pillar_from_index(year_index)
+
+    # --- 月柱（節入り＝太陽黄経で切り替え）-------------------------------
+    lam = _sun_longitude_at_ut(jd_birth_ut, birth.year)
+    # 立春(315度)を寅月の起点とし、30度ごとに 寅→卯→…→丑 と進む
+    month_offset = int(((lam - 315.0) % 360.0) // 30.0)  # 0=寅 .. 11=丑
+    month_branch = (2 + month_offset) % 12
+    # 五虎遁：寅月の天干 = (年干*2 + 2) %10、以降1ずつ進む
+    month_stem = (year_stem * 2 + 2 + month_offset) % 10
+    month_pillar = Pillar(month_stem, month_branch)
+
+    # --- 日柱（23時で切り替え）------------------------------------------
+    after_23 = time_known and h >= 23
+    day_index = day_pillar_index(birth, after_23)
+    day_stem = day_index % 10
+    day_pillar = _pillar_from_index(day_index)
+
+    # --- 時柱 -----------------------------------------------------------
+    hour_pillar = None
+    if time_known:
+        hour_branch = ((h + 1) // 2) % 12          # 23-0時=子 ..
+        # 五鼠遁：子刻の天干 = (日干*2) %10、以降1ずつ進む
+        hour_stem = (day_stem * 2 + hour_branch) % 10
+        hour_pillar = Pillar(hour_stem, hour_branch)
+
+    # --- 五行バランス（命式の天干・地支を数える）------------------------
+    counts = {e: 0 for e in ELEMENTS}
+    pillars = [year_pillar, month_pillar, day_pillar]
+    if hour_pillar is not None:
+        pillars.append(hour_pillar)
+    for p in pillars:
+        counts[p.stem_element] += 1
+        counts[p.branch_element] += 1
+
+    return FourPillars(
+        year=year_pillar,
+        month=month_pillar,
+        day=day_pillar,
+        hour=hour_pillar,
+        day_index=day_index,
+        solar_year=solar_year,
+        time_known=time_known,
+        element_counts=counts,
+        day_master=STEMS[day_stem],
+        day_master_element=STEM_ELEMENT[day_stem],
+        fortune=get_fortune(day_index),
+    )

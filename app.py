@@ -116,28 +116,39 @@ def _register_routes(app: Flask) -> None:
 
     @app.route("/uranai", methods=["GET", "POST"])
     def uranai():
-        """生年月日から日柱の干支を鑑定する（ログイン不要）。"""
+        """生年月日（と時刻）から四柱（命式）を算出し鑑定する（ログイン不要）。"""
         result = None
-        form = {"year": "", "month": "", "day": "", "after_23": False}
+        form = {"year": "", "month": "", "day": "", "hour": "", "minute": ""}
 
         if request.method == "POST":
-            form["year"] = (request.form.get("year") or "").strip()
-            form["month"] = (request.form.get("month") or "").strip()
-            form["day"] = (request.form.get("day") or "").strip()
-            form["after_23"] = request.form.get("after_23") == "on"
+            for key in form:
+                form[key] = (request.form.get(key) or "").strip()
 
             try:
                 birth = date(int(form["year"]), int(form["month"]), int(form["day"]))
             except (ValueError, TypeError):
                 flash("正しい生年月日を入力してください。", "error")
+                return render_template("uranai.html", result=result, form=form)
+
+            # 時刻は任意。時が空なら時刻不明として時柱を省略する
+            hour = minute = None
+            if form["hour"] != "":
+                try:
+                    hour = int(form["hour"])
+                    minute = int(form["minute"]) if form["minute"] != "" else 0
+                    if not (0 <= hour <= 23 and 0 <= minute <= 59):
+                        raise ValueError
+                except (ValueError, TypeError):
+                    flash("時刻は 0〜23 時・0〜59 分で入力してください。", "error")
+                    return render_template("uranai.html", result=result, form=form)
+
+            if birth.year < 1873:
+                # 日本がグレゴリオ暦を採用した1873年以降のみ対応
+                flash("1873年以降の日付を入力してください。", "error")
+            elif birth > date.today():
+                flash("未来の日付は占えません。", "error")
             else:
-                if birth.year < 1873:
-                    # 日本がグレゴリオ暦を採用した1873年以降のみ対応
-                    flash("1873年以降の日付を入力してください。", "error")
-                elif birth > date.today():
-                    flash("未来の日付は占えません。", "error")
-                else:
-                    result = shichu.divine(birth, after_23=form["after_23"])
+                result = shichu.compute_four_pillars(birth, hour, minute or 0)
 
         return render_template("uranai.html", result=result, form=form)
 
