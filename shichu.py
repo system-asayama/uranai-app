@@ -815,3 +815,174 @@ def compute_four_pillars(
         day_master_element=STEM_ELEMENT[day_stem],
         fortune=get_fortune(day_index),
     )
+
+
+# ===========================================================================
+# 相性占い（二人の命式から相性を判定）
+# ---------------------------------------------------------------------------
+# 日干の五行関係（相生・相剋・比和）、日支の合・冲・害、干合を総合して
+# スコアと鑑定文を出す。
+# ===========================================================================
+
+# 五行の相生（a が b を生む）と相剋（a が b を剋す）
+_GENERATE = {("木", "火"), ("火", "土"), ("土", "金"), ("金", "水"), ("水", "木")}
+_CONTROL = {("木", "土"), ("土", "水"), ("水", "火"), ("火", "金"), ("金", "木")}
+
+# 天干の五合（干合）: 甲己 乙庚 丙辛 丁壬 戊癸
+_STEM_COMBINE = {(0, 5), (1, 6), (2, 7), (3, 8), (4, 9)}
+# 十二支の六合（支合）: 子丑 寅亥 卯戌 辰酉 巳申 午未
+_BRANCH_COMBINE = {(0, 1), (2, 11), (3, 10), (4, 9), (5, 8), (6, 7)}
+# 十二支の六冲: 子午 丑未 寅申 卯酉 辰戌 巳亥
+_BRANCH_CLASH = {(0, 6), (1, 7), (2, 8), (3, 9), (4, 10), (5, 11)}
+# 十二支の六害: 子未 丑午 寅巳 卯辰 申亥 酉戌
+_BRANCH_HARM = {(0, 7), (1, 6), (2, 5), (3, 4), (8, 11), (9, 10)}
+# 三合: 申子辰(水) 亥卯未(木) 寅午戌(火) 巳酉丑(金)
+_BRANCH_TRINE = [{8, 0, 4}, {11, 3, 7}, {2, 6, 10}, {5, 9, 1}]
+
+
+def _pair(a: int, b: int) -> tuple[int, int]:
+    return (min(a, b), max(a, b))
+
+
+@dataclass
+class Compatibility:
+    """二人の相性鑑定結果。"""
+    score: int                 # 0..100
+    label: str                 # 相性ランク
+    headline: str              # 見出し
+    relation_element: str      # 日干の五行関係の説明
+    relation_branch: str       # 日支の関係の説明
+    points: list[str]          # 特記事項（干合・同柱など）
+    advice: str                # アドバイス
+
+
+def compatibility(fp1: FourPillars, fp2: FourPillars) -> Compatibility:
+    """二人の命式（四柱）から相性を判定する。日柱を中心に評価する。"""
+    s1, s2 = fp1.day.stem_index, fp2.day.stem_index
+    b1, b2 = fp1.day.branch_index, fp2.day.branch_index
+    e1, e2 = STEM_ELEMENT[s1], STEM_ELEMENT[s2]
+
+    score = 50
+    points: list[str] = []
+
+    # --- 日干（日主）の五行関係 -----------------------------------------
+    if e1 == e2:
+        score += 14
+        relation_element = (
+            f"日干はどちらも「{e1}」。価値観や感性が似た者同士で、"
+            "一緒にいて自然体でいられる関係です。"
+        )
+    elif (e1, e2) in _GENERATE:
+        score += 24
+        relation_element = (
+            f"あなたの「{e1}」が相手の「{e2}」を生かす関係（相生）。"
+            "あなたが相手をやさしく支え、伸ばしてあげられます。"
+        )
+    elif (e2, e1) in _GENERATE:
+        score += 24
+        relation_element = (
+            f"相手の「{e2}」があなたの「{e1}」を生かす関係（相生）。"
+            "相手があなたを支え、引き立ててくれる頼もしい縁です。"
+        )
+    elif (e1, e2) in _CONTROL:
+        score -= 8
+        relation_element = (
+            f"あなたの「{e1}」が相手の「{e2}」を抑える関係（相剋）。"
+            "あなたが主導権を握りやすい反面、相手に無理をさせない配慮を。"
+        )
+    else:  # (e2, e1) in _CONTROL
+        score -= 8
+        relation_element = (
+            f"相手の「{e2}」があなたの「{e1}」を抑える関係（相剋）。"
+            "刺激は多めですが、振り回されないバランス感覚が長続きの鍵。"
+        )
+
+    # --- 日支の関係 -----------------------------------------------------
+    pr = _pair(b1, b2)
+    if b1 == b2:
+        score += 8
+        relation_branch = (
+            f"日支はどちらも「{BRANCHES[b1]}」。生活リズムや感覚が"
+            "合いやすい組み合わせです。"
+        )
+    elif pr in _BRANCH_COMBINE:
+        score += 20
+        relation_branch = (
+            f"日支「{BRANCHES[b1]}」と「{BRANCHES[b2]}」は支合の関係。"
+            "自然と惹かれ合い、結びつきの強い好相性です。"
+        )
+    elif any({b1, b2} <= t for t in _BRANCH_TRINE):
+        score += 16
+        relation_branch = (
+            f"日支「{BRANCHES[b1]}」と「{BRANCHES[b2]}」は三合の関係。"
+            "協力して物事を進めやすい、発展的な相性です。"
+        )
+    elif pr in _BRANCH_CLASH:
+        score -= 18
+        relation_branch = (
+            f"日支「{BRANCHES[b1]}」と「{BRANCHES[b2]}」は冲（衝突）の関係。"
+            "刺激的で惹かれ合う一方、ぶつかりやすいので歩み寄りが大切。"
+        )
+    elif pr in _BRANCH_HARM:
+        score -= 8
+        relation_branch = (
+            f"日支「{BRANCHES[b1]}」と「{BRANCHES[b2]}」は害の関係。"
+            "小さなすれ違いに気をつけると、関係が長続きします。"
+        )
+    else:
+        relation_branch = (
+            f"日支「{BRANCHES[b1]}」と「{BRANCHES[b2]}」は特別な干渉のない、"
+            "ほどよい距離感の関係です。"
+        )
+
+    # --- 干合（日干の五合）---------------------------------------------
+    if _pair(s1, s2) in _STEM_COMBINE:
+        score += 14
+        points.append(
+            f"日干「{STEMS[s1]}」と「{STEMS[s2]}」は干合。強く惹かれ合う、"
+            "運命的な縁を感じさせる組み合わせです。"
+        )
+
+    # --- 同じ日柱 -------------------------------------------------------
+    if s1 == s2 and b1 == b2:
+        points.append(
+            "二人は同じ日柱。鏡のように似ていて深く理解し合えますが、"
+            "長所も短所もそっくりな点には注意。"
+        )
+
+    score = max(5, min(98, score))
+
+    if score >= 85:
+        label, headline = "最高の相性", "💞 運命的なベストパートナー"
+        advice = ("ほうっておいても惹かれ合う最高の縁。感謝を言葉にし、"
+                  "お互いの自由も尊重すると、関係はさらに深まります。")
+    elif score >= 72:
+        label, headline = "とても良い相性", "💕 自然と支え合える二人"
+        advice = ("支え合える土台がある二人。素直なコミュニケーションを"
+                  "続ければ、安定した良い関係を築けます。")
+    elif score >= 60:
+        label, headline = "良い相性", "😊 バランスの取れた良い関係"
+        advice = ("お互いを補い合える良い相性。違いを楽しむ気持ちを持つと、"
+                  "ますます居心地が良くなります。")
+    elif score >= 45:
+        label, headline = "まずまずの相性", "🙂 歩み寄りで深まる関係"
+        advice = ("最初は距離を感じても、対話を重ねるほど深まる関係。"
+                  "相手の立場に立つ習慣が鍵になります。")
+    elif score >= 32:
+        label, headline = "努力が必要な相性", "💪 違いを認め合うことが鍵"
+        advice = ("価値観の違いが出やすい組み合わせ。否定せず「そういう考えも"
+                  "ある」と受け止めることで、刺激し合える関係になります。")
+    else:
+        label, headline = "試練の相性", "🔥 刺激的だが努力を要する関係"
+        advice = ("ぶつかりやすいぶん、乗り越えれば誰よりも分かり合える関係に。"
+                  "適度な距離感とお互いへの敬意を大切に。")
+
+    return Compatibility(
+        score=score,
+        label=label,
+        headline=headline,
+        relation_element=relation_element,
+        relation_branch=relation_branch,
+        points=points,
+        advice=advice,
+    )

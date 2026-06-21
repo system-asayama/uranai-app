@@ -157,6 +157,68 @@ def _register_routes(app: Flask) -> None:
         """六十干支の一覧（早見表）。"""
         return render_template("uranai_list.html", fortunes=shichu.all_fortunes())
 
+    @app.route("/aisho", methods=["GET", "POST"])
+    @login_required
+    def aisho():
+        """二人の生年月日から相性を占う（ログイン必須）。"""
+        result = None
+        # a_* = あなた / b_* = お相手
+        form = {f"{who}_{k}": "" for who in ("a", "b")
+                for k in ("year", "month", "day", "hour", "minute")}
+
+        if request.method == "POST":
+            for key in form:
+                form[key] = (request.form.get(key) or "").strip()
+
+            people = []
+            error = False
+            for who, label in (("a", "あなた"), ("b", "お相手")):
+                try:
+                    birth = date(
+                        int(form[f"{who}_year"]),
+                        int(form[f"{who}_month"]),
+                        int(form[f"{who}_day"]),
+                    )
+                except (ValueError, TypeError):
+                    flash(f"{label}の生年月日を正しく入力してください。", "error")
+                    error = True
+                    break
+
+                hour = minute = None
+                if form[f"{who}_hour"] != "":
+                    try:
+                        hour = int(form[f"{who}_hour"])
+                        minute = (int(form[f"{who}_minute"])
+                                  if form[f"{who}_minute"] != "" else 0)
+                        if not (0 <= hour <= 23 and 0 <= minute <= 59):
+                            raise ValueError
+                    except (ValueError, TypeError):
+                        flash(f"{label}の時刻は 0〜23 時・0〜59 分で入力してください。",
+                              "error")
+                        error = True
+                        break
+
+                if birth.year < 1873:
+                    flash(f"{label}は 1873 年以降の日付を入力してください。", "error")
+                    error = True
+                    break
+                if birth > date.today():
+                    flash(f"{label}に未来の日付は使えません。", "error")
+                    error = True
+                    break
+
+                people.append(shichu.compute_four_pillars(birth, hour, minute or 0))
+
+            if not error:
+                fp_a, fp_b = people
+                result = {
+                    "a": fp_a,
+                    "b": fp_b,
+                    "compat": shichu.compatibility(fp_a, fp_b),
+                }
+
+        return render_template("aisho.html", result=result, form=form)
+
     @app.route("/register", methods=["GET", "POST"])
     def register():
         """利用者（user ロール）の新規登録。"""

@@ -133,6 +133,9 @@
 
 <div class="card">
   <p><a class="link" href="{{ url_for('uranai_list') }}">▶ 六十干支の早見表をみる</a></p>
+  <p><a class="link" href="{{ url_for('aisho') }}">💞 二人の相性を占う（相性占い）</a>
+    {% if not current_user %}<span class="muted small">※ログインが必要です</span>{% endif %}
+  </p>
 </div>
 
 <style>

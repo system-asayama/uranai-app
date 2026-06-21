@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}四柱推命 相性占い{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>💞 四柱推命 相性占い</h1>
+  <p class="muted">
+    二人の生年月日（と時刻）から命式を出し、日柱を中心に
+    <strong>五行の相生・相剋、日支の合・冲・害、干合</strong> を総合して
+    相性を鑑定します。
+  </p>
+
+  <form method="post" action="{{ url_for('aisho') }}">
+    {% for who, title in [('a','あなた'), ('b','お相手')] %}
+    <fieldset class="person">
+      <legend>{{ title }}</legend>
+      <div class="date-row">
+        <div>
+          <label>年（西暦）</label>
+          <input type="number" name="{{ who }}_year" min="1873" max="2100"
+                 placeholder="1990" value="{{ form[who ~ '_year'] }}" required>
+        </div>
+        <div>
+          <label>月</label>
+          <input type="number" name="{{ who }}_month" min="1" max="12"
+                 placeholder="5" value="{{ form[who ~ '_month'] }}" required>
+        </div>
+        <div>
+          <label>日</label>
+          <input type="number" name="{{ who }}_day" min="1" max="31"
+                 placeholder="15" value="{{ form[who ~ '_day'] }}" required>
+        </div>
+        <div>
+          <label>時（任意）</label>
+          <input type="number" name="{{ who }}_hour" min="0" max="23"
+                 placeholder="不明可" value="{{ form[who ~ '_hour'] }}">
+        </div>
+        <div>
+          <label>分（任意）</label>
+          <input type="number" name="{{ who }}_minute" min="0" max="59"
+                 placeholder="0" value="{{ form[who ~ '_minute'] }}">
+        </div>
+      </div>
+    </fieldset>
+    {% endfor %}
+    <button type="submit">相性を占う</button>
+  </form>
+</div>
+
+{% if result %}
+{% set c = result.compat %}
+<div class="card compat">
+  <h2 class="compat-headline">{{ c.headline }}</h2>
+
+  <div class="pair">
+    <div class="pair-side">
+      <div class="pair-label">あなた</div>
+      <div class="pair-ganzhi">{{ result.a.day.name }}</div>
+      <div class="pair-yomi">{{ result.a.day.yomi }}</div>
+    </div>
+    <div class="pair-heart">×</div>
+    <div class="pair-side">
+      <div class="pair-label">お相手</div>
+      <div class="pair-ganzhi">{{ result.b.day.name }}</div>
+      <div class="pair-yomi">{{ result.b.day.yomi }}</div>
+    </div>
+  </div>
+
+  <div class="score-wrap">
+    <div class="score-bar"><span style="width: {{ c.score }}%"></span></div>
+    <div class="score-num">{{ c.score }}<span>点</span></div>
+  </div>
+  <div class="rank">相性ランク：<strong>{{ c.label }}</strong></div>
+</div>
+
+<div class="card">
+  <h3>🌳 日干（本質）の相性</h3>
+  <p>{{ c.relation_element }}</p>
+  <h3>🤝 日支（距離感）の相性</h3>
+  <p>{{ c.relation_branch }}</p>
+  {% for pt in c.points %}
+  <h3>🔮 特別な縁</h3>
+  <p>{{ pt }}</p>
+  {% endfor %}
+  <h3>💡 アドバイス</h3>
+  <p>{{ c.advice }}</p>
+  <p class="muted small">
+    ※相性は四柱の中心となる日柱を中心に鑑定しています。実際の相性は
+    お互いの努力や状況にも左右されます。占いは前向きなヒントとしてご活用ください。
+  </p>
+</div>
+{% endif %}
+
+<style>
+  fieldset.person { border:1px solid #e3e6ee; border-radius:10px;
+                    padding:8px 14px 14px; margin:0 0 16px; }
+  fieldset.person legend { font-weight:700; color:var(--primary); padding:0 6px; }
+  .date-row { display:flex; gap:10px; flex-wrap:wrap; }
+  .date-row > div { flex:1; min-width:70px; }
+  .small { font-size:12px; }
+  .compat { background:linear-gradient(160deg,#5a2a6b,#b03a7e); color:#fff;
+            text-align:center; }
+  .compat-headline { margin:0 0 16px; font-size:22px; }
+  .pair { display:flex; align-items:center; justify-content:center; gap:18px;
+          margin-bottom:18px; }
+  .pair-label { font-size:13px; color:#f3d9ee; }
+  .pair-ganzhi { font-size:36px; font-weight:800; letter-spacing:3px; }
+  .pair-yomi { font-size:12px; color:#f3d9ee; }
+  .pair-heart { font-size:24px; opacity:.8; }
+  .score-wrap { display:flex; align-items:center; gap:14px; max-width:420px;
+                margin:0 auto; }
+  .score-bar { flex:1; background:rgba(255,255,255,.25); border-radius:999px;
+               height:16px; overflow:hidden; }
+  .score-bar span { display:block; height:100%; border-radius:999px;
+                    background:linear-gradient(90deg,#ffd43b,#ff8787); }
+  .score-num { font-size:34px; font-weight:800; }
+  .score-num span { font-size:16px; font-weight:600; }
+  .rank { margin-top:12px; font-size:15px; }
+  .card h3 { font-size:16px; margin:16px 0 6px; }
+</style>
+{% endblock %}
