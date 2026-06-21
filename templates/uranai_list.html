@@ -20,7 +20,7 @@
       <span class="faction" style="background: {{ ch.color }}">{{ ch.faction }}</span>
     </div>
     <div class="mini-body">
-      <img class="thumb" src="{{ url_for('char_image', index=ch.index) }}"
+      <img class="thumb" src="{{ char_url(ch.index) }}"
            alt="{{ ch.name }}" width="64" height="64" loading="lazy">
       <div>
         <div class="char-name">{{ ch.name }}</div>

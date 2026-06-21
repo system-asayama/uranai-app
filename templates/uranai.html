@@ -51,7 +51,7 @@
 {% set f = result.fortune %}
 <div class="card hero" style="--fc: {{ character.color }}">
   <div class="hero-label">あなたに宿る三国志の英雄は…</div>
-  <img class="hero-img" src="{{ url_for('char_image', index=character.index) }}"
+  <img class="hero-img" src="{{ char_url(character.index) }}"
        alt="{{ character.name }}" width="180" height="180">
   <div class="hero-name">{{ character.name }}</div>
   <div class="hero-yomi">{{ character.yomi }}</div>

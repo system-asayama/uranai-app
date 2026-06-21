@@ -54,7 +54,7 @@
   <div class="pair">
     <div class="pair-side">
       <div class="pair-label">あなた</div>
-      <img class="pair-img" src="{{ url_for('char_image', index=result.char_a.index) }}"
+      <img class="pair-img" src="{{ char_url(result.char_a.index) }}"
            alt="{{ result.char_a.name }}" width="110" height="110">
       <div class="pair-ganzhi">{{ result.char_a.name }}</div>
       <div class="pair-yomi">{{ result.char_a.faction }}・{{ result.char_a.title }}</div>
@@ -63,7 +63,7 @@
     <div class="pair-heart">×</div>
     <div class="pair-side">
       <div class="pair-label">お相手</div>
-      <img class="pair-img" src="{{ url_for('char_image', index=result.char_b.index) }}"
+      <img class="pair-img" src="{{ char_url(result.char_b.index) }}"
            alt="{{ result.char_b.name }}" width="110" height="110">
       <div class="pair-ganzhi">{{ result.char_b.name }}</div>
       <div class="pair-yomi">{{ result.char_b.faction }}・{{ result.char_b.title }}</div>

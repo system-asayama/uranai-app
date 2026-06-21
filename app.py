@@ -114,6 +114,22 @@ def _register_routes(app: Flask) -> None:
     def inject_user():
         return {"current_user": current_user()}
 
+    @app.context_processor
+    def inject_helpers():
+        def char_url(index):
+            """キャラ画像URL。実画像があれば更新時刻を、無ければデータ版を
+            バージョンに付与し、差し替え時にキャッシュを確実に更新させる。"""
+            chars_dir = os.path.join(app.root_path, "static", "characters")
+            ver = "svg"
+            for ext in ("png", "jpg", "jpeg", "webp", "svg"):
+                path = os.path.join(chars_dir, f"{index}.{ext}")
+                if os.path.exists(path):
+                    ver = str(int(os.path.getmtime(path)))
+                    break
+            return url_for("char_image", index=index, v=ver)
+
+        return {"char_url": char_url}
+
     @app.route("/")
     def index():
         # トップは誰でも使える四柱推命占いページ
