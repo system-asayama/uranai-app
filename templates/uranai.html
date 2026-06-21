@@ -51,6 +51,8 @@
 {% set f = result.fortune %}
 <div class="card hero" style="--fc: {{ character.color }}">
   <div class="hero-label">あなたに宿る三国志の英雄は…</div>
+  <img class="hero-img" src="{{ url_for('char_image', index=character.index) }}"
+       alt="{{ character.name }}" width="180" height="180">
   <div class="hero-name">{{ character.name }}</div>
   <div class="hero-yomi">{{ character.yomi }}</div>
   <div class="hero-badges">
@@ -155,6 +157,9 @@
   .hero { text-align:center; color:#fff; position:relative; overflow:hidden;
           background:linear-gradient(135deg, var(--fc), #1a1a2e); }
   .hero-label { font-size:14px; opacity:.9; }
+  .hero-img { width:180px; height:180px; border-radius:50%; margin:12px auto 4px;
+              display:block; box-shadow:0 6px 20px rgba(0,0,0,.35);
+              border:3px solid rgba(255,255,255,.5); background:#15151f; }
   .hero-name { font-size:56px; font-weight:900; letter-spacing:6px; margin:6px 0 2px;
                text-shadow:0 2px 12px rgba(0,0,0,.35); }
   .hero-yomi { font-size:14px; opacity:.85; margin-bottom:12px; }

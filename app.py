@@ -12,10 +12,12 @@ from functools import wraps
 
 from flask import (
     Flask,
+    Response,
     flash,
     redirect,
     render_template,
     request,
+    send_from_directory,
     session,
     url_for,
 )
@@ -162,6 +164,24 @@ def _register_routes(app: Flask) -> None:
         """六十干支と三国志キャラの一覧（早見表）。"""
         rows = list(zip(shichu.all_fortunes(), sangokushi.all_characters()))
         return render_template("uranai_list.html", rows=rows)
+
+    @app.route("/char/<int:index>")
+    def char_image(index):
+        """三国志キャラの画像。static/characters/<index>.<ext> があればそれを、
+        無ければ生成した SVG アバターを返す（ログイン不要）。"""
+        if not 0 <= index < 60:
+            return ("not found", 404)
+
+        chars_dir = os.path.join(app.root_path, "static", "characters")
+        for ext in ("png", "jpg", "jpeg", "webp", "svg"):
+            if os.path.exists(os.path.join(chars_dir, f"{index}.{ext}")):
+                return send_from_directory(chars_dir, f"{index}.{ext}")
+
+        svg = sangokushi.character_svg(
+            sangokushi.get_character(index), shichu.ganzhi_name(index)
+        )
+        return Response(svg, mimetype="image/svg+xml",
+                        headers={"Cache-Control": "public, max-age=86400"})
 
     @app.route("/aisho", methods=["GET", "POST"])
     @login_required

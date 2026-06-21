@@ -170,3 +170,43 @@ def get_character(index: int) -> Character:
 
 def all_characters() -> list[Character]:
     return [get_character(i) for i in range(60)]
+
+
+def character_svg(c: Character, ganzhi: str) -> str:
+    """キャラクターの武将エンブレム風アバター画像(SVG文字列)を生成する。
+
+    実画像が無い場合のフォールバックとして用いる。勢力色のグラデーション、
+    印章風の円、名前・勢力・干支で構成する。
+    """
+    color = c.color
+    n = len(c.name)
+    name_fs = 132 if n <= 2 else (94 if n == 3 else 76)
+    return f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 360" \
+width="360" height="360" role="img" aria-label="{c.name}">
+  <defs>
+    <linearGradient id="bg{c.index}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="{color}"/>
+      <stop offset="1" stop-color="#15151f"/>
+    </linearGradient>
+    <radialGradient id="gl{c.index}" cx="50%" cy="40%" r="60%">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.30"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="ds{c.index}" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000" flood-opacity="0.45"/>
+    </filter>
+    <style>text{{font-family:"Yu Mincho","Hiragino Mincho ProN","Noto Serif CJK JP","Noto Serif JP",serif;}}</style>
+  </defs>
+  <rect width="360" height="360" fill="url(#bg{c.index})"/>
+  <rect width="360" height="360" fill="url(#gl{c.index})"/>
+  <rect x="13" y="13" width="334" height="334" rx="18" fill="none" stroke="#ffffff" stroke-opacity="0.55" stroke-width="2"/>
+  <rect x="20" y="20" width="320" height="320" rx="13" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="1"/>
+  <circle cx="180" cy="178" r="106" fill="#000000" fill-opacity="0.16" stroke="{color}" stroke-width="3"/>
+  <rect x="148" y="42" width="64" height="32" rx="16" fill="#ffffff"/>
+  <text x="180" y="64" text-anchor="middle" font-size="21" font-weight="700" fill="{color}">{c.faction}</text>
+  <text x="180" y="178" text-anchor="middle" dominant-baseline="central" \
+fill="#ffffff" font-size="{name_fs}" font-weight="900" filter="url(#ds{c.index})">{c.name}</text>
+  <text x="180" y="312" text-anchor="middle" fill="#ffffff" fill-opacity="0.95" font-size="23" font-weight="700">{ganzhi}</text>
+  <text x="180" y="335" text-anchor="middle" fill="#ffffff" fill-opacity="0.6" font-size="13">No.{c.index + 1} / 60</text>
+</svg>"""
+

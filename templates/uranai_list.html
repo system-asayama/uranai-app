@@ -18,8 +18,14 @@
       <span class="no">No.{{ f.index + 1 }}・{{ f.name }}</span>
       <span class="faction" style="background: {{ ch.color }}">{{ ch.faction }}</span>
     </div>
-    <div class="char-name">{{ ch.name }}</div>
-    <div class="char-title muted">{{ ch.title }}</div>
+    <div class="mini-body">
+      <img class="thumb" src="{{ url_for('char_image', index=ch.index) }}"
+           alt="{{ ch.name }}" width="64" height="64" loading="lazy">
+      <div>
+        <div class="char-name">{{ ch.name }}</div>
+        <div class="char-title muted">{{ ch.title }}</div>
+      </div>
+    </div>
     <p class="catch">{{ f.catch }}</p>
   </div>
   {% endfor %}
@@ -31,8 +37,11 @@
   .mini-head { display:flex; align-items:center; justify-content:space-between; gap:8px; }
   .mini .no { font-size:12px; color:var(--muted); }
   .mini .faction { color:#fff; font-size:11px; font-weight:700; border-radius:999px; padding:2px 8px; }
-  .char-name { font-size:26px; font-weight:800; letter-spacing:1px; margin:6px 0 0; }
-  .char-title { font-size:12px; margin-bottom:8px; }
+  .mini-body { display:flex; align-items:center; gap:12px; margin:8px 0; }
+  .thumb { width:64px; height:64px; border-radius:50%; flex-shrink:0;
+           box-shadow:0 2px 6px rgba(0,0,0,.2); }
+  .char-name { font-size:24px; font-weight:800; letter-spacing:1px; }
+  .char-title { font-size:12px; }
   .mini .catch { font-size:13px; margin:0; }
 </style>
 {% endblock %}
