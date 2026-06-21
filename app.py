@@ -20,6 +20,7 @@ from flask import (
     url_for,
 )
 
+import sangokushi
 import shichu
 from models import ROLE_ADMIN, ROLE_USER, ROLES, User, db
 
@@ -150,12 +151,17 @@ def _register_routes(app: Flask) -> None:
             else:
                 result = shichu.compute_four_pillars(birth, hour, minute or 0)
 
-        return render_template("uranai.html", result=result, form=form)
+        character = (sangokushi.get_character(result.day_index)
+                     if result is not None else None)
+        return render_template(
+            "uranai.html", result=result, form=form, character=character
+        )
 
     @app.route("/uranai/list")
     def uranai_list():
-        """六十干支の一覧（早見表）。"""
-        return render_template("uranai_list.html", fortunes=shichu.all_fortunes())
+        """六十干支と三国志キャラの一覧（早見表）。"""
+        rows = list(zip(shichu.all_fortunes(), sangokushi.all_characters()))
+        return render_template("uranai_list.html", rows=rows)
 
     @app.route("/aisho", methods=["GET", "POST"])
     @login_required
@@ -214,6 +220,8 @@ def _register_routes(app: Flask) -> None:
                 result = {
                     "a": fp_a,
                     "b": fp_b,
+                    "char_a": sangokushi.get_character(fp_a.day_index),
+                    "char_b": sangokushi.get_character(fp_b.day_index),
                     "compat": shichu.compatibility(fp_a, fp_b),
                 }
 
