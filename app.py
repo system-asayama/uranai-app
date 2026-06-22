@@ -199,6 +199,12 @@ def _register_routes(app: Flask) -> None:
         form = {f"m{i}_{k}": "" for i in range(slots)
                 for k in ("name", "year", "month", "day")}
 
+        if request.method == "GET":
+            # 占い結果からの遷移：メンバー1を事前入力（実行は2人目入力後）
+            for key in form:
+                if request.args.get(key):
+                    form[key] = request.args.get(key).strip()
+
         if request.method == "POST":
             for key in form:
                 form[key] = (request.form.get(key) or "").strip()
@@ -242,9 +248,11 @@ def _register_routes(app: Flask) -> None:
         form = {"year": "", "month": "", "day": "",
                 "s_year": "", "s_month": "", "s_day": "", "mode": "day"}
 
-        if request.method == "POST":
+        # POST、または GET でも生年月日が渡されたら（占い結果からの遷移）実行
+        has_birth = all(request.values.get(k) for k in ("year", "month", "day"))
+        if request.method == "POST" or has_birth:
             for key in form:
-                form[key] = (request.form.get(key) or "").strip()
+                form[key] = (request.values.get(key) or "").strip()
             mode = form["mode"] if form["mode"] in shichu.BIO_MODES else "day"
             form["mode"] = mode
             try:
@@ -363,6 +371,12 @@ def _register_routes(app: Flask) -> None:
         # a_* = あなた / b_* = お相手
         form = {f"{who}_{k}": "" for who in ("a", "b")
                 for k in ("year", "month", "day", "hour", "minute")}
+
+        if request.method == "GET":
+            # 占い結果からの遷移：あなた側を事前入力（実行は相手入力後）
+            for key in form:
+                if request.args.get(key):
+                    form[key] = request.args.get(key).strip()
 
         if request.method == "POST":
             for key in form:

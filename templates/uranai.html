@@ -143,16 +143,38 @@
     年柱・月柱・時柱や蔵干・通変星まで読むと、より精緻な鑑定になります。
   </p>
 </div>
+
+<div class="card more">
+  <h2 class="more-title">この生年月日でさらに調べる</h2>
+  <p class="muted small">入力した生年月日（{{ form.year }}/{{ form.month }}/{{ form.day }}）を引き継いで占えます。</p>
+  <div class="more-links">
+    <a class="more-btn b-bio"
+       href="{{ url_for('biorhythm', year=form.year, month=form.month, day=form.day) }}">
+      📈 バイオリズムを見る</a>
+    <a class="more-btn b-aisho"
+       href="{{ url_for('aisho', a_year=form.year, a_month=form.month, a_day=form.day) }}">
+      💞 相性占い（相手を追加）
+      {% if aisho_requires_login and not current_user %}<span class="lock">🔒</span>{% endif %}</a>
+    <a class="more-btn b-team"
+       href="{{ url_for('team', m0_year=form.year, m0_month=form.month, m0_day=form.day) }}">
+      🛡️ チーム診断（メンバー追加）</a>
+  </div>
+</div>
 {% endif %}
 
 <div class="card">
   <p><a class="link" href="{{ url_for('uranai_list') }}">▶ 六十干支の早見表をみる</a></p>
-  <p><a class="link" href="{{ url_for('aisho') }}">💞 二人の相性を占う（相性占い）</a>
-    {% if aisho_requires_login and not current_user %}<span class="muted small">※ログインが必要です</span>{% endif %}
-  </p>
 </div>
 
 <style>
+  /* さらに調べるカード */
+  .more-title { font-size:18px; margin:0 0 4px; }
+  .more-links { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+                gap:10px; margin-top:10px; }
+  .more-btn { display:block; text-align:center; text-decoration:none; color:#fff;
+              padding:14px 12px; border-radius:10px; font-weight:700; }
+  .more-btn .lock { font-size:12px; }
+  .b-bio { background:#4c6ef5; } .b-aisho { background:#b03a7e; } .b-team { background:#2f9e44; }
   /* 三国志キャラのヒーローカード */
   .hero { text-align:center; color:#fff; position:relative; overflow:hidden;
           background:linear-gradient(135deg, var(--fc), #1a1a2e); }
