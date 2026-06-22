@@ -147,13 +147,29 @@
 <div class="card analysis">
   <h2 class="more-title">日干「{{ profile.stem }}」で読む詳しい分析</h2>
   <p class="muted small">あなたの本体＝日干は
-    <strong>{{ profile.stem }}（{{ profile.yomi }}・{{ profile.element }}{{ profile.yinyang }}）＝{{ profile.type_name }}タイプ</strong>。</p>
+    <strong>{{ profile.stem }}（{{ profile.yomi }}・{{ profile.element }}{{ profile.yinyang }}）＝{{ profile.type_name }}タイプ</strong>。
+    生まれ持った長所・短所を理解する手がかりにしてください。</p>
+
   <h3>🧭 基本性格</h3>
-  <p>{{ profile.seikaku }}</p>
-  <h3>💖 恋愛観</h3>
-  <p>{{ profile.renai }}</p>
-  <h3>💼 ビジネス観</h3>
-  <p>{{ profile.business }}</p>
+  {% for p in profile.seikaku %}<p>{{ p }}</p>{% endfor %}
+
+  <h3>👍 長所</h3>
+  <ul class="pt good">{% for x in profile.chosho %}<li>{{ x }}</li>{% endfor %}</ul>
+
+  <h3>👀 短所</h3>
+  <ul class="pt bad">{% for x in profile.tansho %}<li>{{ x }}</li>{% endfor %}</ul>
+
+  <h3>💰 金銭面</h3>
+  <p>{{ profile.kinsen }}</p>
+
+  <h3>💖 恋愛傾向</h3>
+  {% for p in profile.renai %}<p>{{ p }}</p>{% endfor %}
+
+  <h3>💼 仕事・適職</h3>
+  <p>{{ profile.shigoto }}</p>
+
+  <h3>🤝 人間関係</h3>
+  <p>{{ profile.ningen }}</p>
 </div>
 
 <div class="card more">
@@ -181,7 +197,13 @@
 <style>
   /* さらに調べるカード */
   .more-title { font-size:18px; margin:0 0 4px; }
-  .analysis h3 { font-size:16px; margin:16px 0 6px; }
+  .analysis h3 { font-size:16px; margin:18px 0 6px; padding-left:8px;
+                 border-left:4px solid var(--primary); }
+  .analysis p { line-height:1.8; margin:6px 0; }
+  .analysis .pt { margin:6px 0; padding-left:22px; }
+  .analysis .pt li { margin:3px 0; line-height:1.7; }
+  .analysis .pt.good li::marker { color:#2f9e44; }
+  .analysis .pt.bad li::marker { color:#e8590c; }
   .more-links { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
                 gap:10px; margin-top:10px; }
   .more-btn { display:block; text-align:center; text-decoration:none; color:#fff;
