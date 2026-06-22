@@ -844,6 +844,25 @@ def _pair(a: int, b: int) -> tuple[int, int]:
     return (min(a, b), max(a, b))
 
 
+# 納音（なっちん）: 六十干支を2つずつ30種に分類。(名前, 五行)
+# index//2 で引く（甲子乙丑=海中金 … 壬戌癸亥=大海水）。
+NAYIN = [
+    ("海中金", "金"), ("炉中火", "火"), ("大林木", "木"), ("路傍土", "土"),
+    ("剣鋒金", "金"), ("山頭火", "火"), ("澗下水", "水"), ("城頭土", "土"),
+    ("白鑞金", "金"), ("楊柳木", "木"), ("泉中水", "水"), ("屋上土", "土"),
+    ("霹靂火", "火"), ("松柏木", "木"), ("長流水", "水"), ("沙中金", "金"),
+    ("山下火", "火"), ("平地木", "木"), ("壁上土", "土"), ("金箔金", "金"),
+    ("覆灯火", "火"), ("天河水", "水"), ("大駅土", "土"), ("釵釧金", "金"),
+    ("桑柘木", "木"), ("大渓水", "水"), ("沙中土", "土"), ("天上火", "火"),
+    ("石榴木", "木"), ("大海水", "水"),
+]
+
+
+def nayin(index: int) -> tuple[str, str]:
+    """干支index(0..59)から納音 (名前, 五行) を返す。"""
+    return NAYIN[index // 2]
+
+
 @dataclass
 class Compatibility:
     """二人の相性鑑定結果。"""
@@ -852,6 +871,9 @@ class Compatibility:
     headline: str              # 見出し
     relation_element: str      # 日干の五行関係の説明
     relation_branch: str       # 日支の関係の説明
+    relation_nayin: str        # 納音（なっちん）の関係の説明
+    nayin_a: str               # あなたの納音名
+    nayin_b: str               # お相手の納音名
     points: list[str]          # 特記事項（干合・同柱など）
     advice: str                # アドバイス
 
@@ -935,6 +957,40 @@ def compatibility(fp1: FourPillars, fp2: FourPillars) -> Compatibility:
             "ほどよい距離感の関係です。"
         )
 
+    # --- 納音（なっちん）の相性 ----------------------------------------
+    na1, ne1 = nayin(fp1.day_index)
+    na2, ne2 = nayin(fp2.day_index)
+    if na1 == na2:
+        score += 10
+        relation_nayin = (
+            f"二人の納音はどちらも「{na1}」。同じ星を持つ、深く響き合う"
+            "特別な縁です（似た者同士ゆえ甘えすぎには注意）。"
+        )
+    elif ne1 == ne2:
+        score += 6
+        relation_nayin = (
+            f"納音は「{na1}」と「{na2}」。五行はどちらも「{ne1}」で、"
+            "感覚が近く安心できる相性です。"
+        )
+    elif (ne1, ne2) in _GENERATE:
+        score += 11
+        relation_nayin = (
+            f"納音「{na1}」が「{na2}」を生かす関係（納音の相生）。"
+            "あなたが相手を育て、運気を後押しします。"
+        )
+    elif (ne2, ne1) in _GENERATE:
+        score += 11
+        relation_nayin = (
+            f"納音「{na2}」が「{na1}」を生かす関係（納音の相生）。"
+            "相手があなたの運気を引き上げてくれます。"
+        )
+    else:  # 相剋
+        score -= 6
+        relation_nayin = (
+            f"納音「{na1}」と「{na2}」は抑え合う関係（納音の相剋）。"
+            "刺激し合う縁。違いを尊重すると学びの多い関係になります。"
+        )
+
     # --- 干合（日干の五合）---------------------------------------------
     if _pair(s1, s2) in _STEM_COMBINE:
         score += 14
@@ -983,6 +1039,9 @@ def compatibility(fp1: FourPillars, fp2: FourPillars) -> Compatibility:
         headline=headline,
         relation_element=relation_element,
         relation_branch=relation_branch,
+        relation_nayin=relation_nayin,
+        nayin_a=na1,
+        nayin_b=na2,
         points=points,
         advice=advice,
     )

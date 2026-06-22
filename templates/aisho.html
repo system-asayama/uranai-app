@@ -5,8 +5,8 @@
   <h1>💞 三国志 相性占い</h1>
   <p class="muted">
     二人の生年月日（と時刻）から、それぞれに宿る <strong>三国志の英雄</strong>
-    を導き、日柱を中心に <strong>五行の相生・相剋、日支の合・冲・害、干合</strong>
-    を総合して二人の相性を鑑定します。
+    を導き、日柱を中心に <strong>五行の相生・相剋、日支の合・冲・害、干合、
+    納音（なっちん）</strong> を総合して二人の相性を鑑定します。
   </p>
 
   <form method="post" action="{{ url_for('aisho') }}">
@@ -58,7 +58,7 @@
            alt="{{ result.char_a.name }}" width="110" height="110">
       <div class="pair-ganzhi">{{ result.char_a.name }}</div>
       <div class="pair-yomi">{{ result.char_a.faction }}・{{ result.char_a.title }}</div>
-      <div class="pair-yomi">日柱 {{ result.a.day.name }}</div>
+      <div class="pair-yomi">日柱 {{ result.a.day.name }}／納音 {{ result.compat.nayin_a }}</div>
     </div>
     <div class="pair-heart">×</div>
     <div class="pair-side">
@@ -67,7 +67,7 @@
            alt="{{ result.char_b.name }}" width="110" height="110">
       <div class="pair-ganzhi">{{ result.char_b.name }}</div>
       <div class="pair-yomi">{{ result.char_b.faction }}・{{ result.char_b.title }}</div>
-      <div class="pair-yomi">日柱 {{ result.b.day.name }}</div>
+      <div class="pair-yomi">日柱 {{ result.b.day.name }}／納音 {{ result.compat.nayin_b }}</div>
     </div>
   </div>
 
@@ -83,6 +83,8 @@
   <p>{{ c.relation_element }}</p>
   <h3>🤝 日支（距離感）の相性</h3>
   <p>{{ c.relation_branch }}</p>
+  <h3>🎐 納音（なっちん）の相性</h3>
+  <p>{{ c.relation_nayin }}</p>
   {% for pt in c.points %}
   <h3>🔮 特別な縁</h3>
   <p>{{ pt }}</p>
