@@ -95,6 +95,21 @@
 </div>
 
 <div class="card">
+  <h2 class="meishiki-title">🔁 お互いの見え方</h2>
+  <div class="view-item">
+    <div class="view-head">{{ result.char_a.name }}（あなた）から見た
+      {{ result.char_b.name }} … <strong>{{ c.partner_role_god }}</strong></div>
+    <p>{{ c.partner_role_desc }}</p>
+  </div>
+  <div class="view-item rev">
+    <div class="view-head">{{ result.char_b.name }}（お相手）から見た
+      {{ result.char_a.name }}（あなた）… <strong>{{ c.self_role_god }}</strong></div>
+    <p>{{ c.self_role_desc }}</p>
+  </div>
+  <p class="muted small">「相手から見たあなた」は、相手の日干から見た通変星（十神）です。</p>
+</div>
+
+<div class="card">
   <h3>🌳 日干（本質）の相性</h3>
   <p>{{ c.relation_element }}</p>
   <h3>🤝 日支（距離感）の相性</h3>
@@ -156,5 +171,9 @@
   .p-friend { background:linear-gradient(90deg,#ffd43b,#ffa94d); }
   .p-business { background:linear-gradient(90deg,#4dabf7,#3b5bdb); }
   .persp-comment { font-size:14px; margin:2px 0 0; }
+  .view-item { border-left:4px solid #b03a7e; padding:6px 0 6px 12px; margin:10px 0; }
+  .view-item.rev { border-left-color:#4c6ef5; }
+  .view-head { font-size:14px; font-weight:600; margin-bottom:4px; }
+  .view-item p { margin:0; font-size:14px; }
 </style>
 {% endblock %}

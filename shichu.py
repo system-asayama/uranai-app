@@ -955,6 +955,21 @@ def _build_perspectives(dm_rel, branch_rel, ganggou, same_pillar, nayin_rel):
     return result
 
 
+# 通変星（十神）の関係性での意味：「相手は自分にとってどんな存在か」
+TEN_GOD_RELATION = {
+    "比肩": "対等な同志・分身のような存在。価値観が似て励みになる一方、張り合うことも。",
+    "劫財": "頼れる協力者。助け合える反面、ペースを乱されたり甘えが出やすい関係。",
+    "食神": "一緒にいて癒やしと楽しさをくれる存在。素のままでいられて居心地が良い。",
+    "傷官": "刺激と気づきをくれる存在。才能を引き出してくれるが、時に辛口に感じることも。",
+    "偏財": "楽しみ・チャンス・人脈を広げてくれる華やかな存在。一緒だと行動的になれる。",
+    "正財": "安定と信頼を与えてくれる堅実な存在。現実的に支え合える安心の関係。",
+    "偏官": "自分を鍛え引き締めてくれる存在。頼もしい反面プレッシャーを感じることも。",
+    "正官": "筋を通し信頼で結ばれる存在。きちんとさせてくれて、背筋が伸びる関係。",
+    "偏印": "独自の視点やひらめきをくれる存在。面白いが、距離感が読みにくいことも。",
+    "印綬": "学びと安心、愛情を与え守り育ててくれる存在。甘えさせてくれる関係。",
+}
+
+
 @dataclass
 class Compatibility:
     """二人の相性鑑定結果。"""
@@ -969,6 +984,10 @@ class Compatibility:
     points: list[str]          # 特記事項（干合・同柱など）
     advice: str                # アドバイス
     perspectives: list[Perspective]  # 恋愛・友情・ビジネスの観点別相性
+    partner_role_god: str      # あなたから見た相手の通変星
+    partner_role_desc: str
+    self_role_god: str         # 相手から見たあなたの通変星
+    self_role_desc: str
 
 
 def compatibility(fp1: FourPillars, fp2: FourPillars) -> Compatibility:
@@ -1136,6 +1155,10 @@ def compatibility(fp1: FourPillars, fp2: FourPillars) -> Compatibility:
         nayin_rel,
     )
 
+    # --- 通変星による双方向の見え方 -------------------------------------
+    partner_role_god = ten_god(s1, s2)   # あなた(s1)から見た相手(s2)
+    self_role_god = ten_god(s2, s1)      # 相手(s2)から見たあなた(s1)
+
     score = max(5, min(98, score))
 
     if score >= 85:
@@ -1175,6 +1198,10 @@ def compatibility(fp1: FourPillars, fp2: FourPillars) -> Compatibility:
         points=points,
         advice=advice,
         perspectives=perspectives,
+        partner_role_god=partner_role_god,
+        partner_role_desc=TEN_GOD_RELATION[partner_role_god],
+        self_role_god=self_role_god,
+        self_role_desc=TEN_GOD_RELATION[self_role_god],
     )
 
 
