@@ -1324,3 +1324,173 @@ def analyze_team(people: list[tuple[str, FourPillars]]) -> TeamAnalysis:
         tensions=tensions,
         advice=advice,
     )
+
+
+# ===========================================================================
+# 十干バイオリズム（通変星による10日周期の運気リズム）
+# ---------------------------------------------------------------------------
+# 「日の十干」は10日周期で巡り、自分の日干との関係が通変星（十神）を生む。
+# 各通変星に運気スコアとテーマを割り当て、日々のリズムとして可視化する。
+# ===========================================================================
+
+# 通変星（十神）: スコア(0-100), テーマ
+TEN_GODS = {
+    "比肩": (72, "自立・行動の日。自分の意志で前に出ると吉。"),
+    "劫財": (55, "仲間と協力できる日。勢い任せの出費・油断には注意。"),
+    "食神": (88, "のびのび楽しめる絶好調日。表現・食・遊びが運を呼びます。"),
+    "傷官": (62, "感性が冴える日。才能発揮の好機、言葉はやわらかめに。"),
+    "偏財": (82, "社交とチャンスの日。人と動くほど運が開けます。"),
+    "正財": (76, "堅実に実りを得る日。コツコツ・節約・約束を守ると吉。"),
+    "偏官": (45, "プレッシャーや試練の日。攻めすぎず守りも大切に。"),
+    "正官": (66, "規律と信頼の日。きちんと取り組むと評価が上がります。"),
+    "偏印": (52, "ひらめきの日。気分にムラが出やすいので一息つきながら。"),
+    "印綬": (70, "学び・休息の日。インプットや充電に最適です。"),
+}
+
+
+def ten_god(dm_stem: int, x_stem: int) -> str:
+    """日干 dm_stem から見た 相手の十干 x_stem の通変星（十神）を返す。"""
+    dm_el, x_el = STEM_ELEMENT[dm_stem], STEM_ELEMENT[x_stem]
+    same = STEM_YINYANG[dm_stem] == STEM_YINYANG[x_stem]
+    if x_el == dm_el:                       # 比劫
+        return "比肩" if same else "劫財"
+    if (dm_el, x_el) in _GENERATE:          # 我生（食傷）
+        return "食神" if same else "傷官"
+    if (dm_el, x_el) in _CONTROL:           # 我剋（財）
+        return "偏財" if same else "正財"
+    if (x_el, dm_el) in _CONTROL:           # 剋我（官）
+        return "偏官" if same else "正官"
+    return "偏印" if same else "印綬"        # 生我（印）
+
+
+@dataclass
+class BioDay:
+    date: date
+    weekday: str           # 月〜日
+    stem: str              # その日の十干
+    god: str               # 通変星
+    score: int
+    theme: str
+    is_today: bool
+
+
+_WEEKDAYS = ["月", "火", "水", "木", "金", "土", "日"]
+
+
+@dataclass
+class Biorhythm:
+    day_master: str            # 日干
+    day_master_element: str
+    days: list[BioDay]
+    today: BioDay              # 起点日の運気
+    best: BioDay               # 期間中の最高運気日
+    rest: BioDay               # 期間中の充電向きの日
+    chart_svg: str
+
+
+def biorhythm(birth: date, start: date, span: int = 14) -> Biorhythm:
+    """生年月日と起点日から、十干バイオリズム（span日分）を生成する。"""
+    from datetime import timedelta
+
+    dm = day_pillar_index(birth) % 10
+    days: list[BioDay] = []
+    for i in range(span):
+        d = start + timedelta(days=i)
+        x = day_pillar_index(d) % 10
+        god = ten_god(dm, x)
+        score, theme = TEN_GODS[god]
+        days.append(BioDay(
+            date=d,
+            weekday=_WEEKDAYS[d.weekday()],
+            stem=STEMS[x],
+            god=god,
+            score=score,
+            theme=theme,
+            is_today=(d == start),
+        ))
+
+    best = max(days, key=lambda b: b.score)
+    rest = min(days, key=lambda b: b.score)
+    return Biorhythm(
+        day_master=STEMS[dm],
+        day_master_element=STEM_ELEMENT[dm],
+        days=days,
+        today=days[0],
+        best=best,
+        rest=rest,
+        chart_svg=_biorhythm_chart_svg(days),
+    )
+
+
+def _bio_color(score: int) -> str:
+    if score >= 75:
+        return "#37b24d"
+    if score >= 55:
+        return "#f59f00"
+    return "#e8590c"
+
+
+def _biorhythm_chart_svg(days: list[BioDay]) -> str:
+    """バイオリズム曲線の SVG を生成する。"""
+    w, h = 720, 240
+    pl, pr, pt, pb = 30, 14, 16, 38
+    pw, ph = w - pl - pr, h - pt - pb
+    n = len(days)
+    step = pw / (n - 1) if n > 1 else pw
+
+    def xy(i, score):
+        x = pl + i * step
+        y = pt + (1 - score / 100.0) * ph
+        return x, y
+
+    parts = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" '
+        f'width="100%" preserveAspectRatio="xMidYMid meet" '
+        f'font-family="system-ui,sans-serif">'
+    ]
+    # 目盛り（0/50/100）
+    for val in (0, 50, 100):
+        gy = pt + (1 - val / 100.0) * ph
+        parts.append(
+            f'<line x1="{pl}" y1="{gy:.1f}" x2="{w - pr}" y2="{gy:.1f}" '
+            f'stroke="#e9ecef" stroke-width="1"/>'
+        )
+        parts.append(
+            f'<text x="{pl - 6}" y="{gy + 3:.1f}" text-anchor="end" '
+            f'font-size="9" fill="#adb5bd">{val}</text>'
+        )
+    # 面と折れ線
+    pts = [xy(i, b.score) for i, b in enumerate(days)]
+    line = " ".join(f"{x:.1f},{y:.1f}" for x, y in pts)
+    area = (f"{pl},{pt + ph} " + line + f" {pl + (n - 1) * step:.1f},{pt + ph}")
+    parts.append(f'<polygon points="{area}" fill="#4c6ef5" fill-opacity="0.10"/>')
+    parts.append(
+        f'<polyline points="{line}" fill="none" stroke="#4c6ef5" '
+        f'stroke-width="2.5" stroke-linejoin="round"/>'
+    )
+    # 各日の点・ラベル
+    for i, b in enumerate(days):
+        x, y = pts[i]
+        r = 5.5 if b.is_today else 3.5
+        parts.append(
+            f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{r}" fill="{_bio_color(b.score)}" '
+            f'stroke="#fff" stroke-width="1.5"/>'
+        )
+        if b.is_today:
+            parts.append(
+                f'<line x1="{x:.1f}" y1="{pt}" x2="{x:.1f}" y2="{pt + ph}" '
+                f'stroke="#4c6ef5" stroke-width="1" stroke-dasharray="3 3"/>'
+            )
+        label = f"{b.date.month}/{b.date.day}"
+        lc = "#4c6ef5" if b.is_today else "#868e96"
+        fw = ' font-weight="700"' if b.is_today else ""
+        parts.append(
+            f'<text x="{x:.1f}" y="{h - pb + 14:.1f}" text-anchor="middle" '
+            f'font-size="9" fill="{lc}"{fw}>{label}</text>'
+        )
+        parts.append(
+            f'<text x="{x:.1f}" y="{h - pb + 25:.1f}" text-anchor="middle" '
+            f'font-size="9" fill="#495057">{b.god[:2]}</text>'
+        )
+    parts.append("</svg>")
+    return "".join(parts)

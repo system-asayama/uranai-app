@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}十干バイオリズム分析{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>📈 十干バイオリズム分析</h1>
+  <p class="muted">
+    四柱推命では「日の十干」が10日周期で巡り、あなたの <strong>日干（日主）</strong>
+    との関係が日ごとの <strong>通変星（十神）</strong> を生みます。これを運気の
+    リズムとして可視化し、14日間の好調日・充電日と過ごし方をお伝えします。
+  </p>
+  <form method="post" action="{{ url_for('biorhythm') }}">
+    <label>生年月日</label>
+    <div class="date-row">
+      <input type="number" name="year" placeholder="1990" min="1873" max="2100"
+             value="{{ form.year }}" required>
+      <input type="number" name="month" placeholder="月" min="1" max="12"
+             value="{{ form.month }}" required>
+      <input type="number" name="day" placeholder="日" min="1" max="31"
+             value="{{ form.day }}" required>
+    </div>
+    <label>起点日（任意・未入力なら今日）</label>
+    <div class="date-row">
+      <input type="number" name="s_year" placeholder="年" min="1900" max="2100"
+             value="{{ form.s_year }}">
+      <input type="number" name="s_month" placeholder="月" min="1" max="12"
+             value="{{ form.s_month }}">
+      <input type="number" name="s_day" placeholder="日" min="1" max="31"
+             value="{{ form.s_day }}">
+    </div>
+    <button type="submit">バイオリズムを見る</button>
+  </form>
+</div>
+
+{% if result %}
+<div class="card">
+  <h2 class="sec-title">運気リズム（14日間）</h2>
+  <p class="muted small">あなたの日干は
+    <strong>{{ result.day_master }}（{{ result.day_master_element }}）</strong>。
+    点の色は運気の高さ（<span style="color:#37b24d">緑=好調</span>／
+    <span style="color:#f59f00">黄=普通</span>／
+    <span style="color:#e8590c">橙=控えめ</span>）。</p>
+  <div class="chart">{{ result.chart_svg | safe }}</div>
+</div>
+
+<div class="card">
+  <div class="hl">
+    <div class="hl-item today">
+      <div class="hl-label">起点日（{{ result.today.date.month }}/{{ result.today.date.day }}）</div>
+      <div class="hl-god">{{ result.today.god }}</div>
+      <div class="hl-score">{{ result.today.score }}点</div>
+      <div class="hl-theme muted">{{ result.today.theme }}</div>
+    </div>
+    <div class="hl-item best">
+      <div class="hl-label">🌟 好調日（{{ result.best.date.month }}/{{ result.best.date.day }} {{ result.best.weekday }}）</div>
+      <div class="hl-god">{{ result.best.god }}</div>
+      <div class="hl-score">{{ result.best.score }}点</div>
+      <div class="hl-theme muted">{{ result.best.theme }}</div>
+    </div>
+    <div class="hl-item rest">
+      <div class="hl-label">🛀 充電日（{{ result.rest.date.month }}/{{ result.rest.date.day }} {{ result.rest.weekday }}）</div>
+      <div class="hl-god">{{ result.rest.god }}</div>
+      <div class="hl-score">{{ result.rest.score }}点</div>
+      <div class="hl-theme muted">{{ result.rest.theme }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2 class="sec-title">日別の運気</h2>
+  <table class="bio">
+    <thead><tr><th>日付</th><th>曜</th><th>十干</th><th>通変星</th><th>運気</th><th>過ごし方</th></tr></thead>
+    <tbody>
+      {% for b in result.days %}
+      <tr class="{{ 'is-today' if b.is_today }}">
+        <td>{{ b.date.month }}/{{ b.date.day }}</td>
+        <td>{{ b.weekday }}</td>
+        <td>{{ b.stem }}</td>
+        <td>{{ b.god }}</td>
+        <td><div class="mini-bar"><span style="width:{{ b.score }}%;background:
+          {% if b.score>=75 %}#37b24d{% elif b.score>=55 %}#f59f00{% else %}#e8590c{% endif %}"></span></div></td>
+        <td class="theme">{{ b.theme }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="muted small">※あなたの日干と「その日の十干」の関係（通変星）にもとづく
+    リズムです。占いは前向きなヒントとしてご活用ください。</p>
+</div>
+{% endif %}
+
+<style>
+  .date-row { display:flex; gap:10px; margin-bottom:6px; }
+  .date-row input { flex:1; }
+  .small { font-size:12px; }
+  .sec-title { font-size:18px; margin-top:0; }
+  .chart { width:100%; overflow-x:auto; }
+  .hl { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; }
+  .hl-item { border-radius:10px; padding:12px; background:#f8f9fb; border-top:4px solid #adb5bd; }
+  .hl-item.today { border-top-color:#4c6ef5; }
+  .hl-item.best { border-top-color:#37b24d; }
+  .hl-item.rest { border-top-color:#e8590c; }
+  .hl-label { font-size:12px; color:var(--muted); }
+  .hl-god { font-size:24px; font-weight:800; margin:2px 0; }
+  .hl-score { font-weight:700; }
+  .hl-theme { font-size:12px; margin-top:4px; }
+  table.bio { width:100%; border-collapse:collapse; }
+  table.bio th, table.bio td { padding:6px 8px; border-bottom:1px solid #eee;
+                               font-size:13px; text-align:left; }
+  table.bio td.theme { font-size:12px; color:#555; }
+  tr.is-today { background:#eef2ff; font-weight:700; }
+  .mini-bar { background:#f1f3f5; border-radius:999px; height:10px; width:70px; overflow:hidden; }
+  .mini-bar span { display:block; height:100%; border-radius:999px; }
+</style>
+{% endblock %}

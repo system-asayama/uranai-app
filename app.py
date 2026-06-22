@@ -235,6 +235,39 @@ def _register_routes(app: Flask) -> None:
                                slots=slots, element_color=shichu.ELEMENT_COLOR,
                                element_team=shichu.ELEMENT_TEAM)
 
+    @app.route("/biorhythm", methods=["GET", "POST"])
+    def biorhythm():
+        """十干（通変星）による10日周期のバイオリズム分析（ログイン不要）。"""
+        result = None
+        form = {"year": "", "month": "", "day": "",
+                "s_year": "", "s_month": "", "s_day": ""}
+
+        if request.method == "POST":
+            for key in form:
+                form[key] = (request.form.get(key) or "").strip()
+            try:
+                birth = date(int(form["year"]), int(form["month"]), int(form["day"]))
+            except (ValueError, TypeError):
+                flash("生年月日を正しく入力してください。", "error")
+                return render_template("biorhythm.html", result=result, form=form)
+
+            # 起点日（任意）。未入力なら今日
+            start = date.today()
+            if form["s_year"] or form["s_month"] or form["s_day"]:
+                try:
+                    start = date(int(form["s_year"]), int(form["s_month"]),
+                                 int(form["s_day"]))
+                except (ValueError, TypeError):
+                    flash("起点日を正しく入力してください。", "error")
+                    return render_template("biorhythm.html", result=result, form=form)
+
+            if birth.year < 1873 or birth > date.today():
+                flash("生年月日は1873年以降〜今日までで入力してください。", "error")
+            else:
+                result = shichu.biorhythm(birth, start, span=14)
+
+        return render_template("biorhythm.html", result=result, form=form)
+
     @app.route("/char/<int:index>")
     def char_image(index):
         """三国志キャラの画像。static/characters/<index>.<ext> があればそれを、
