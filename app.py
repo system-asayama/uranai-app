@@ -181,8 +181,11 @@ def _register_routes(app: Flask) -> None:
 
         character = (sangokushi.get_character(result.day_index)
                      if result is not None else None)
+        profile = (shichu.day_master_profile(result.day.stem_index)
+                   if result is not None else None)
         return render_template(
-            "uranai.html", result=result, form=form, character=character
+            "uranai.html", result=result, form=form,
+            character=character, profile=profile,
         )
 
     @app.route("/uranai/list")

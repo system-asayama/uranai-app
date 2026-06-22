@@ -144,6 +144,18 @@
   </p>
 </div>
 
+<div class="card analysis">
+  <h2 class="more-title">日干「{{ profile.stem }}」で読む詳しい分析</h2>
+  <p class="muted small">あなたの本体＝日干は
+    <strong>{{ profile.stem }}（{{ profile.yomi }}・{{ profile.element }}{{ profile.yinyang }}）＝{{ profile.type_name }}タイプ</strong>。</p>
+  <h3>🧭 基本性格</h3>
+  <p>{{ profile.seikaku }}</p>
+  <h3>💖 恋愛観</h3>
+  <p>{{ profile.renai }}</p>
+  <h3>💼 ビジネス観</h3>
+  <p>{{ profile.business }}</p>
+</div>
+
 <div class="card more">
   <h2 class="more-title">この生年月日でさらに調べる</h2>
   <p class="muted small">入力した生年月日（{{ form.year }}/{{ form.month }}/{{ form.day }}）を引き継いで占えます。</p>
@@ -169,6 +181,7 @@
 <style>
   /* さらに調べるカード */
   .more-title { font-size:18px; margin:0 0 4px; }
+  .analysis h3 { font-size:16px; margin:16px 0 6px; }
   .more-links { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
                 gap:10px; margin-top:10px; }
   .more-btn { display:block; text-align:center; text-decoration:none; color:#fff;
