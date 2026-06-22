@@ -6,7 +6,8 @@
   <p class="muted">
     二人の生年月日（と時刻）から、それぞれに宿る <strong>三国志の英雄</strong>
     を導き、日柱を中心に <strong>五行の相生・相剋、日支の合・冲・害、干合、
-    納音（なっちん）</strong> を総合して二人の相性を鑑定します。
+    納音（なっちん）</strong> を総合して、総合相性に加えて
+    <strong>恋愛・友情・ビジネス</strong> の観点別に相性を鑑定します。
   </p>
 
   <form method="post" action="{{ url_for('aisho') }}">
@@ -79,6 +80,21 @@
 </div>
 
 <div class="card">
+  <h2 class="meishiki-title">観点別の相性</h2>
+  {% for p in c.perspectives %}
+  <div class="persp">
+    <div class="persp-head">
+      <span class="persp-name">{{ p.icon }} {{ p.name }}</span>
+      <span class="persp-level">{{ p.level }}</span>
+      <span class="persp-score">{{ p.score }}点</span>
+    </div>
+    <div class="pbar"><span class="pbar-fill p-{{ p.key }}" style="width: {{ p.score }}%"></span></div>
+    <p class="persp-comment">{{ p.comment }}</p>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="card">
   <h3>🌳 日干（本質）の相性</h3>
   <p>{{ c.relation_element }}</p>
   <h3>🤝 日支（距離感）の相性</h3>
@@ -128,5 +144,17 @@
   .score-num span { font-size:16px; font-weight:600; }
   .rank { margin-top:12px; font-size:15px; }
   .card h3 { font-size:16px; margin:16px 0 6px; }
+  .meishiki-title { font-size:18px; margin-top:0; }
+  .persp { margin:14px 0; }
+  .persp-head { display:flex; align-items:baseline; gap:10px; }
+  .persp-name { font-weight:700; font-size:15px; }
+  .persp-level { font-size:13px; color:var(--muted); }
+  .persp-score { margin-left:auto; font-weight:800; }
+  .pbar { background:#f1f3f5; border-radius:999px; height:12px; overflow:hidden; margin:6px 0; }
+  .pbar-fill { display:block; height:100%; border-radius:999px; }
+  .p-romance { background:linear-gradient(90deg,#ff8787,#f06595); }
+  .p-friend { background:linear-gradient(90deg,#ffd43b,#ffa94d); }
+  .p-business { background:linear-gradient(90deg,#4dabf7,#3b5bdb); }
+  .persp-comment { font-size:14px; margin:2px 0 0; }
 </style>
 {% endblock %}

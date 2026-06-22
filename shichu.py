@@ -864,6 +864,98 @@ def nayin(index: int) -> tuple[str, str]:
 
 
 @dataclass
+class Perspective:
+    """観点別（恋愛・友情・ビジネス）の相性。"""
+    key: str       # romance / friend / business
+    name: str      # 表示名
+    icon: str
+    score: int     # 0..100
+    level: str     # 抜群/良い…
+    comment: str
+
+
+# 観点ごとの重み付け（同じ干支の関係でも観点で意味が変わる）
+# dm = 日干の五行関係, branch = 日支の関係, nayin = 納音の五行関係
+_PERSPECTIVE_WEIGHTS = {
+    "romance": {
+        "icon": "💕", "name": "恋愛",
+        "dm": {"same": 10, "support": 18, "friction": -6},
+        "branch": {"combine": 24, "trine": 14, "same": 8, "clash": 6,
+                   "harm": -6, "none": 0},
+        "ganggou": 20, "same_pillar": 6,
+        "nayin": {"same": 12, "same_el": 6, "gen": 8, "ctrl": -4},
+        "bands": [
+            (78, "とても良い", "惹かれ合う相性。自然と一緒にいたくなる二人です。"
+                 "素直に気持ちを伝えるほど深まります。"),
+            (62, "良い", "居心地のよい恋人になれる相性。"
+                 "お互いのペースを尊重し合うと長続きします。"),
+            (48, "まずまず", "時間をかけて愛を育てていくタイプ。"
+                 "こまめな対話とスキンシップが鍵になります。"),
+            (0, "要努力", "刺激は強いぶん起伏も大きめ。"
+                "適度な距離感と思いやりを大切にしましょう。"),
+        ],
+    },
+    "friend": {
+        "icon": "🤝", "name": "友情",
+        "dm": {"same": 16, "support": 14, "friction": -2},
+        "branch": {"combine": 16, "trine": 20, "same": 12, "clash": -10,
+                   "harm": -6, "none": 2},
+        "ganggou": 6, "same_pillar": 10,
+        "nayin": {"same": 10, "same_el": 8, "gen": 6, "ctrl": -2},
+        "bands": [
+            (78, "とても良い", "気の合う大親友になれる相性。"
+                 "長く続く、かけがえのない縁です。"),
+            (62, "良い", "一緒にいて楽な友人同士。"
+                 "趣味や目標を共有すると一層盛り上がります。"),
+            (48, "まずまず", "ほどよい距離感の友人。"
+                 "深入りしすぎないほうが心地よく続きます。"),
+            (0, "要努力", "価値観の差が出やすい間柄。"
+                "違いを面白がれると刺激的な関係になります。"),
+        ],
+    },
+    "business": {
+        "icon": "💼", "name": "ビジネス",
+        "dm": {"same": 4, "support": 22, "friction": 6},
+        "branch": {"combine": 14, "trine": 22, "same": 6, "clash": -14,
+                   "harm": -8, "none": 4},
+        "ganggou": 8, "same_pillar": -2,
+        "nayin": {"same": 6, "same_el": 6, "gen": 10, "ctrl": 0},
+        "bands": [
+            (78, "とても良い", "役割が噛み合い成果を出しやすい名コンビ。"
+                 "互いに任せ合うほど強くなります。"),
+            (62, "良い", "協力して前に進める相性。"
+                 "目標と役割を明確にすると力を発揮します。"),
+            (48, "まずまず", "補完し合えますが調整も必要。"
+                 "報告・連絡・相談を丁寧にすると安定します。"),
+            (0, "要努力", "摩擦が出やすい組み合わせ。"
+                "役割と責任をはっきり分けると噛み合います。"),
+        ],
+    },
+}
+
+
+def _build_perspectives(dm_rel, branch_rel, ganggou, same_pillar, nayin_rel):
+    """観点別（恋愛・友情・ビジネス）の相性リストを作る。"""
+    result = []
+    for key in ("romance", "friend", "business"):
+        w = _PERSPECTIVE_WEIGHTS[key]
+        score = 50
+        score += w["dm"][dm_rel]
+        score += w["branch"][branch_rel]
+        if ganggou:
+            score += w["ganggou"]
+        if same_pillar:
+            score += w["same_pillar"]
+        score += w["nayin"][nayin_rel]
+        score = max(5, min(98, score))
+        for threshold, level, comment in w["bands"]:
+            if score >= threshold:
+                break
+        result.append(Perspective(key, w["name"], w["icon"], score, level, comment))
+    return result
+
+
+@dataclass
 class Compatibility:
     """二人の相性鑑定結果。"""
     score: int                 # 0..100
@@ -876,6 +968,7 @@ class Compatibility:
     nayin_b: str               # お相手の納音名
     points: list[str]          # 特記事項（干合・同柱など）
     advice: str                # アドバイス
+    perspectives: list[Perspective]  # 恋愛・友情・ビジネスの観点別相性
 
 
 def compatibility(fp1: FourPillars, fp2: FourPillars) -> Compatibility:
@@ -1006,6 +1099,43 @@ def compatibility(fp1: FourPillars, fp2: FourPillars) -> Compatibility:
             "長所も短所もそっくりな点には注意。"
         )
 
+    # --- 観点別（恋愛・友情・ビジネス）の相性 ---------------------------
+    if e1 == e2:
+        dm_rel = "same"
+    elif (e1, e2) in _GENERATE or (e2, e1) in _GENERATE:
+        dm_rel = "support"
+    else:
+        dm_rel = "friction"
+
+    if b1 == b2:
+        branch_rel = "same"
+    elif pr in _BRANCH_COMBINE:
+        branch_rel = "combine"
+    elif any({b1, b2} <= t for t in _BRANCH_TRINE):
+        branch_rel = "trine"
+    elif pr in _BRANCH_CLASH:
+        branch_rel = "clash"
+    elif pr in _BRANCH_HARM:
+        branch_rel = "harm"
+    else:
+        branch_rel = "none"
+
+    if na1 == na2:
+        nayin_rel = "same"
+    elif ne1 == ne2:
+        nayin_rel = "same_el"
+    elif (ne1, ne2) in _GENERATE or (ne2, ne1) in _GENERATE:
+        nayin_rel = "gen"
+    else:
+        nayin_rel = "ctrl"
+
+    perspectives = _build_perspectives(
+        dm_rel, branch_rel,
+        _pair(s1, s2) in _STEM_COMBINE,
+        s1 == s2 and b1 == b2,
+        nayin_rel,
+    )
+
     score = max(5, min(98, score))
 
     if score >= 85:
@@ -1044,4 +1174,5 @@ def compatibility(fp1: FourPillars, fp2: FourPillars) -> Compatibility:
         nayin_b=na2,
         points=points,
         advice=advice,
+        perspectives=perspectives,
     )
