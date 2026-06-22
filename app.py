@@ -237,14 +237,16 @@ def _register_routes(app: Flask) -> None:
 
     @app.route("/biorhythm", methods=["GET", "POST"])
     def biorhythm():
-        """十干（通変星）による10日周期のバイオリズム分析（ログイン不要）。"""
+        """十干（通変星）によるバイオリズム分析（日/月/年・ログイン不要）。"""
         result = None
         form = {"year": "", "month": "", "day": "",
-                "s_year": "", "s_month": "", "s_day": ""}
+                "s_year": "", "s_month": "", "s_day": "", "mode": "day"}
 
         if request.method == "POST":
             for key in form:
                 form[key] = (request.form.get(key) or "").strip()
+            mode = form["mode"] if form["mode"] in shichu.BIO_MODES else "day"
+            form["mode"] = mode
             try:
                 birth = date(int(form["year"]), int(form["month"]), int(form["day"]))
             except (ValueError, TypeError):
@@ -264,9 +266,10 @@ def _register_routes(app: Flask) -> None:
             if birth.year < 1873 or birth > date.today():
                 flash("生年月日は1873年以降〜今日までで入力してください。", "error")
             else:
-                result = shichu.biorhythm(birth, start, span=14)
+                result = shichu.biorhythm(birth, start, mode=mode)
 
-        return render_template("biorhythm.html", result=result, form=form)
+        return render_template("biorhythm.html", result=result, form=form,
+                               modes=shichu.BIO_MODES)
 
     @app.route("/char/<int:index>")
     def char_image(index):

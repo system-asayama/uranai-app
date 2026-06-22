@@ -4,9 +4,10 @@
 <div class="card">
   <h1>📈 十干バイオリズム分析</h1>
   <p class="muted">
-    四柱推命では「日の十干」が10日周期で巡り、あなたの <strong>日干（日主）</strong>
-    との関係が日ごとの <strong>通変星（十神）</strong> を生みます。これを運気の
-    リズムとして可視化し、14日間の好調日・充電日と過ごし方をお伝えします。
+    四柱推命では <strong>年柱＝年運／月柱＝月運／日柱＝日運</strong>。その期間の
+    十干と、あなたの <strong>日干（日主）</strong> との関係が <strong>通変星（十神）</strong>
+    を生み、運気のリズムになります。<strong>日ごと・月ごと・年ごと</strong>で
+    好調期・充電期と過ごし方を可視化します。
   </p>
   <form method="post" action="{{ url_for('biorhythm') }}">
     <label>生年月日</label>
@@ -18,7 +19,19 @@
       <input type="number" name="day" placeholder="日" min="1" max="31"
              value="{{ form.day }}" required>
     </div>
-    <label>起点日（任意・未入力なら今日）</label>
+
+    <label>表示単位</label>
+    <div class="mode-row">
+      {% for key, info in modes.items() %}
+      <label class="mode-opt">
+        <input type="radio" name="mode" value="{{ key }}"
+               {% if form.mode == key %}checked{% endif %}>
+        <span>{{ info[0] }}</span>
+      </label>
+      {% endfor %}
+    </div>
+
+    <label>起点（任意・未入力なら今日／今月／今年）</label>
     <div class="date-row">
       <input type="number" name="s_year" placeholder="年" min="1900" max="2100"
              value="{{ form.s_year }}">
@@ -33,7 +46,7 @@
 
 {% if result %}
 <div class="card">
-  <h2 class="sec-title">運気リズム（14日間）</h2>
+  <h2 class="sec-title">運気リズム（{{ result.mode_label }}・{{ result.points|length }}{{ result.unit }}間）</h2>
   <p class="muted small">あなたの日干は
     <strong>{{ result.day_master }}（{{ result.day_master_element }}）</strong>。
     点の色は運気の高さ（<span style="color:#37b24d">緑=好調</span>／
@@ -45,19 +58,19 @@
 <div class="card">
   <div class="hl">
     <div class="hl-item today">
-      <div class="hl-label">起点日（{{ result.today.date.month }}/{{ result.today.date.day }}）</div>
-      <div class="hl-god">{{ result.today.god }}</div>
-      <div class="hl-score">{{ result.today.score }}点</div>
-      <div class="hl-theme muted">{{ result.today.theme }}</div>
+      <div class="hl-label">起点（{{ result.current.full }}）</div>
+      <div class="hl-god">{{ result.current.god }}</div>
+      <div class="hl-score">{{ result.current.score }}点</div>
+      <div class="hl-theme muted">{{ result.current.theme }}</div>
     </div>
     <div class="hl-item best">
-      <div class="hl-label">🌟 好調日（{{ result.best.date.month }}/{{ result.best.date.day }} {{ result.best.weekday }}）</div>
+      <div class="hl-label">🌟 好調（{{ result.best.full }}）</div>
       <div class="hl-god">{{ result.best.god }}</div>
       <div class="hl-score">{{ result.best.score }}点</div>
       <div class="hl-theme muted">{{ result.best.theme }}</div>
     </div>
     <div class="hl-item rest">
-      <div class="hl-label">🛀 充電日（{{ result.rest.date.month }}/{{ result.rest.date.day }} {{ result.rest.weekday }}）</div>
+      <div class="hl-label">🛀 充電（{{ result.rest.full }}）</div>
       <div class="hl-god">{{ result.rest.god }}</div>
       <div class="hl-score">{{ result.rest.score }}点</div>
       <div class="hl-theme muted">{{ result.rest.theme }}</div>
@@ -66,14 +79,13 @@
 </div>
 
 <div class="card">
-  <h2 class="sec-title">日別の運気</h2>
+  <h2 class="sec-title">{{ result.unit }}別の運気</h2>
   <table class="bio">
-    <thead><tr><th>日付</th><th>曜</th><th>十干</th><th>通変星</th><th>運気</th><th>過ごし方</th></tr></thead>
+    <thead><tr><th>{{ result.unit }}</th><th>十干</th><th>通変星</th><th>運気</th><th>過ごし方</th></tr></thead>
     <tbody>
-      {% for b in result.days %}
-      <tr class="{{ 'is-today' if b.is_today }}">
-        <td>{{ b.date.month }}/{{ b.date.day }}</td>
-        <td>{{ b.weekday }}</td>
+      {% for b in result.points %}
+      <tr class="{{ 'is-today' if b.is_current }}">
+        <td>{{ b.full }}</td>
         <td>{{ b.stem }}</td>
         <td>{{ b.god }}</td>
         <td><div class="mini-bar"><span style="width:{{ b.score }}%;background:
@@ -83,14 +95,18 @@
       {% endfor %}
     </tbody>
   </table>
-  <p class="muted small">※あなたの日干と「その日の十干」の関係（通変星）にもとづく
-    リズムです。占いは前向きなヒントとしてご活用ください。</p>
+  <p class="muted small">※あなたの日干と「その{{ result.unit }}の十干」の関係（通変星）に
+    もとづくリズムです。占いは前向きなヒントとしてご活用ください。</p>
 </div>
 {% endif %}
 
 <style>
   .date-row { display:flex; gap:10px; margin-bottom:6px; }
   .date-row input { flex:1; }
+  .mode-row { display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+  .mode-opt { display:flex; align-items:center; gap:6px; padding:8px 14px;
+              border:1px solid #d0d4dd; border-radius:8px; cursor:pointer; }
+  .mode-opt input { width:auto; }
   .small { font-size:12px; }
   .sec-title { font-size:18px; margin-top:0; }
   .chart { width:100%; overflow-x:auto; }
