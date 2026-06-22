@@ -191,6 +191,50 @@ def _register_routes(app: Flask) -> None:
         rows = list(zip(shichu.all_fortunes(), sangokushi.all_characters()))
         return render_template("uranai_list.html", rows=rows)
 
+    @app.route("/team", methods=["GET", "POST"])
+    def team():
+        """複数メンバーの五行からチームビルディングを分析する（ログイン不要）。"""
+        slots = 6
+        result = None
+        form = {f"m{i}_{k}": "" for i in range(slots)
+                for k in ("name", "year", "month", "day")}
+
+        if request.method == "POST":
+            for key in form:
+                form[key] = (request.form.get(key) or "").strip()
+
+            people = []
+            error = False
+            for i in range(slots):
+                y = form[f"m{i}_year"]
+                mo = form[f"m{i}_month"]
+                d = form[f"m{i}_day"]
+                if not (y or mo or d):
+                    continue  # 空行はスキップ
+                label = form[f"m{i}_name"]
+                who = label or f"メンバー{i + 1}"
+                try:
+                    birth = date(int(y), int(mo), int(d))
+                except (ValueError, TypeError):
+                    flash(f"{who}の生年月日を正しく入力してください。", "error")
+                    error = True
+                    break
+                if birth.year < 1873 or birth > date.today():
+                    flash(f"{who}は1873年以降〜今日までの日付で入力してください。",
+                          "error")
+                    error = True
+                    break
+                people.append((label, shichu.compute_four_pillars(birth)))
+
+            if not error and len(people) < 2:
+                flash("メンバーは2人以上入力してください。", "error")
+            elif not error:
+                result = shichu.analyze_team(people)
+
+        return render_template("team.html", result=result, form=form,
+                               slots=slots, element_color=shichu.ELEMENT_COLOR,
+                               element_team=shichu.ELEMENT_TEAM)
+
     @app.route("/char/<int:index>")
     def char_image(index):
         """三国志キャラの画像。static/characters/<index>.<ext> があればそれを、

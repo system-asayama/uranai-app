@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}五行チームビルディング診断{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>🛡️ 五行チームビルディング診断</h1>
+  <p class="muted">
+    メンバーの生年月日から、一人ひとりの <strong>五行タイプ（木・火・土・金・水）</strong>
+    を割り出し、チーム全体のバランス・役割の過不足・相生（好循環）と相剋（摩擦）を
+    分析して、編成のアドバイスをします。2〜{{ slots }}人まで入力できます。
+  </p>
+  <form method="post" action="{{ url_for('team') }}">
+    {% for i in range(slots) %}
+    <div class="member-row">
+      <span class="member-no">{{ i + 1 }}</span>
+      <input type="text" name="m{{ i }}_name" placeholder="名前（任意）"
+             value="{{ form['m' ~ i ~ '_name'] }}" class="m-name">
+      <input type="number" name="m{{ i }}_year" placeholder="年" min="1873" max="2100"
+             value="{{ form['m' ~ i ~ '_year'] }}">
+      <input type="number" name="m{{ i }}_month" placeholder="月" min="1" max="12"
+             value="{{ form['m' ~ i ~ '_month'] }}">
+      <input type="number" name="m{{ i }}_day" placeholder="日" min="1" max="31"
+             value="{{ form['m' ~ i ~ '_day'] }}">
+    </div>
+    {% endfor %}
+    <p class="muted small">※最初の2行だけでもOK。空の行は無視されます。</p>
+    <button type="submit">チームを診断する</button>
+  </form>
+</div>
+
+{% if result %}
+<div class="card">
+  <h2 class="sec-title">メンバーの五行タイプ</h2>
+  <div class="members">
+    {% for m in result.members %}
+    <div class="m-card" style="border-top:5px solid {{ m.color }}">
+      <div class="m-el" style="background:{{ m.color }}">{{ m.element }}</div>
+      <div class="m-name-l">{{ m.label }}</div>
+      <div class="m-role muted">{{ m.role }}</div>
+      <div class="m-day muted">日柱 {{ m.day_name }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="card">
+  <h2 class="sec-title">五行バランス（{{ result.balance_type }}）</h2>
+  <div class="gogyo">
+    {% for el in ["木","火","土","金","水"] %}
+    <div class="gogyo-item">
+      <div class="gogyo-label" style="color:{{ element_color[el] }}">{{ el }}</div>
+      <div class="bar"><span class="bar-fill" style="background:{{ element_color[el] }};
+           width: {{ (result.element_counts[el] / result.members|length * 100) | round }}%"></span></div>
+      <div class="gogyo-count">{{ result.element_counts[el] }}人</div>
+      <div class="gogyo-role muted">{{ element_team[el].role }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  <p>{{ result.balance_comment }}</p>
+</div>
+
+{% if result.synergies %}
+<div class="card">
+  <h2 class="sec-title">🔄 相生（チームの好循環）</h2>
+  {% for s in result.synergies %}<p>{{ s }}</p>{% endfor %}
+</div>
+{% endif %}
+
+{% if result.tensions %}
+<div class="card">
+  <h2 class="sec-title">⚡ 相剋（注意したい組み合わせ）</h2>
+  {% for t in result.tensions %}<p>{{ t }}</p>{% endfor %}
+</div>
+{% endif %}
+
+<div class="card advice">
+  <h2 class="sec-title">💡 チームビルディングのアドバイス</h2>
+  <ul>
+    {% for a in result.advice %}<li>{{ a }}</li>{% endfor %}
+  </ul>
+  <p class="muted small">※各メンバーの「日干（生まれ日の五行）」をもとにした分析です。
+    占いは前向きなヒントとしてご活用ください。</p>
+</div>
+{% endif %}
+
+<style>
+  .member-row { display:flex; gap:8px; align-items:center; margin-bottom:8px; }
+  .member-no { width:22px; text-align:center; color:var(--muted); font-weight:700; flex-shrink:0; }
+  .member-row input { padding:8px; }
+  .member-row .m-name { flex:2; }
+  .member-row input[type=number] { flex:1; min-width:54px; }
+  .small { font-size:12px; }
+  .sec-title { font-size:18px; margin-top:0; }
+  .members { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:12px; }
+  .m-card { background:#fff; border-radius:10px; padding:12px; text-align:center;
+            box-shadow:0 1px 4px rgba(0,0,0,.08); }
+  .m-el { width:46px; height:46px; line-height:46px; border-radius:50%; margin:0 auto 8px;
+          color:#fff; font-size:24px; font-weight:800; }
+  .m-name-l { font-weight:700; }
+  .m-role { font-size:12px; }
+  .m-day { font-size:11px; }
+  .gogyo-item { display:grid; grid-template-columns:28px 1fr auto auto; gap:10px;
+                align-items:center; margin:6px 0; }
+  .gogyo-label { width:28px; height:28px; line-height:28px; text-align:center;
+                 border-radius:50%; font-weight:800; background:#f1f3f5; }
+  .bar { background:#f1f3f5; border-radius:999px; height:14px; overflow:hidden; }
+  .bar-fill { display:block; height:100%; border-radius:999px; min-width:2px; }
+  .gogyo-count { font-weight:700; font-size:13px; width:38px; text-align:right; }
+  .gogyo-role { font-size:11px; width:84px; }
+  .advice ul { margin:0; padding-left:20px; }
+  .advice li { margin:6px 0; }
+</style>
+{% endblock %}

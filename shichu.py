@@ -1176,3 +1176,151 @@ def compatibility(fp1: FourPillars, fp2: FourPillars) -> Compatibility:
         advice=advice,
         perspectives=perspectives,
     )
+
+
+# ===========================================================================
+# 五行チームビルディング分析
+# ---------------------------------------------------------------------------
+# 各メンバーの日干（その人の五行タイプ）からチームの五行バランスを分析し、
+# 役割の過不足・相生（好循環）・相剋（摩擦）を踏まえた助言を返す。
+# ===========================================================================
+
+# 五行ごとのチームでの役割・強み
+ELEMENT_TEAM = {
+    "木": {"role": "開拓・企画役", "strength": "成長志向とリーダーシップ",
+           "contributes": "ビジョンを描き、新しいことを始める推進力",
+           "lack": "方向性を示す人や新規開拓の力"},
+    "火": {"role": "発信・盛り上げ役", "strength": "情熱と発信力",
+           "contributes": "場を明るくし人を巻き込み、対外的にアピールする力",
+           "lack": "チームの熱量や発信・営業の力"},
+    "土": {"role": "調整・まとめ役", "strength": "安定感と信頼",
+           "contributes": "人と人をつなぎ、チームの土台を支えまとめる力",
+           "lack": "まとめ役や安定感、サポートの力"},
+    "金": {"role": "実務・品質役", "strength": "規律と分析力",
+           "contributes": "物事をきっちり仕上げ、品質と決断を担う力",
+           "lack": "実務を仕上げる力や品質管理・決断力"},
+    "水": {"role": "戦略・参謀役", "strength": "知恵と柔軟性",
+           "contributes": "情報を集めて戦略を練り、柔軟に橋渡しする力",
+           "lack": "戦略・情報収集や柔軟な調整の力"},
+}
+
+# 相生（a が b を生かす）／相剋（a が b を抑える）
+_ELEM_GENERATE = [("木", "火"), ("火", "土"), ("土", "金"), ("金", "水"), ("水", "木")]
+_ELEM_CONTROL = [("木", "土"), ("土", "水"), ("水", "火"), ("火", "金"), ("金", "木")]
+
+
+@dataclass
+class TeamMember:
+    label: str
+    element: str
+    day_name: str
+
+    @property
+    def role(self) -> str:
+        return ELEMENT_TEAM[self.element]["role"]
+
+    @property
+    def color(self) -> str:
+        return ELEMENT_COLOR[self.element]
+
+
+@dataclass
+class TeamAnalysis:
+    members: list[TeamMember]
+    element_counts: dict           # {五行: 人数}
+    present: list[str]             # そろっている五行
+    missing: list[str]             # 欠けている五行
+    balance_type: str             # バランス型/一極集中 など
+    balance_comment: str
+    synergies: list[str]          # 相生（好循環）の説明
+    tensions: list[str]           # 相剋（摩擦）の注意点
+    advice: list[str]             # 総合アドバイス
+
+
+def analyze_team(people: list[tuple[str, FourPillars]]) -> TeamAnalysis:
+    """(ラベル, 命式) のリストからチームの五行バランスを分析する。"""
+    members = [
+        TeamMember(label or f"メンバー{i + 1}",
+                   fp.day_master_element, fp.day.name)
+        for i, (label, fp) in enumerate(people)
+    ]
+
+    counts = {e: 0 for e in ELEMENTS}
+    for m in members:
+        counts[m.element] += 1
+    present = [e for e in ELEMENTS if counts[e] > 0]
+    missing = [e for e in ELEMENTS if counts[e] == 0]
+
+    total = len(members)
+    distinct = len(present)
+    max_count = max(counts.values())
+    dominant = [e for e in ELEMENTS if counts[e] == max_count]
+
+    # --- バランス判定 ---------------------------------------------------
+    if distinct >= 4:
+        balance_type = "バランス型"
+        balance_comment = (
+            "五行が幅広くそろった理想的なチーム。多様な視点と役割が"
+            "自然に補い合い、安定して力を発揮できます。"
+        )
+    elif distinct == 1:
+        balance_type = "一極集中型"
+        balance_comment = (
+            f"全員が「{present[0]}」タイプ。結束は固く意思決定は速い反面、"
+            "視点が偏りやすいので、異なるタイプの意見を意識的に取り入れて。"
+        )
+    elif total >= 3 and max_count >= total * 0.6:
+        balance_type = "偏り型"
+        balance_comment = (
+            f"「{'・'.join(dominant)}」タイプが多めのチーム。強みは尖りますが、"
+            "手薄な役割を誰がカバーするか決めておくと安定します。"
+        )
+    else:
+        balance_type = "二〜三極型"
+        balance_comment = (
+            "いくつかの五行で構成されたチーム。かみ合えば強いので、"
+            "役割分担を明確にすると力を発揮します。"
+        )
+
+    # --- 相生（好循環）と相剋（摩擦）-----------------------------------
+    synergies = []
+    for a, b in _ELEM_GENERATE:
+        if counts[a] and counts[b]:
+            synergies.append(
+                f"{a}→{b}：{ELEMENT_TEAM[a]['role']}が{ELEMENT_TEAM[b]['role']}を"
+                "後押しする好循環があります。"
+            )
+    tensions = []
+    for a, b in _ELEM_CONTROL:
+        if counts[a] and counts[b]:
+            tensions.append(
+                f"{a}↔{b}：{ELEMENT_TEAM[a]['role']}と{ELEMENT_TEAM[b]['role']}は"
+                "ぶつかりやすい関係。役割と責任を分けると刺激が活きます。"
+            )
+
+    # --- 総合アドバイス -------------------------------------------------
+    advice = [balance_comment]
+    for e in missing:
+        info = ELEMENT_TEAM[e]
+        advice.append(
+            f"「{e}（{info['role']}）」が不在：{info['lack']}が手薄です。"
+            f"{info['contributes']}を、誰かが意識して担うか外部で補うと安定します。"
+        )
+    if synergies:
+        advice.append("相生の好循環を活かし、得意を渡し合う流れを作りましょう。")
+    if tensions:
+        advice.append("相剋の関係は、役割を明確に分ければ良い緊張感になります。")
+    if not missing and not tensions:
+        advice.append("欠けも強い摩擦もなく、まとまりやすい編成です。")
+
+    return TeamAnalysis(
+        members=members,
+        element_counts=counts,
+        present=present,
+        missing=missing,
+        balance_type=balance_type,
+        balance_comment=balance_comment,
+        synergies=synergies,
+        tensions=tensions,
+        advice=advice,
+    )
