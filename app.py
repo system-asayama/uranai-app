@@ -147,11 +147,14 @@ def _register_routes(app: Flask) -> None:
     def uranai():
         """生年月日（と時刻）から四柱（命式）を算出し鑑定する（ログイン不要）。"""
         result = None
-        form = {"year": "", "month": "", "day": "", "hour": "", "minute": ""}
+        form = {"year": "", "month": "", "day": "", "hour": "", "minute": "",
+                "gender": "male"}
 
         if request.method == "POST":
             for key in form:
                 form[key] = (request.form.get(key) or "").strip()
+            if form["gender"] not in ("male", "female"):
+                form["gender"] = "male"
 
             try:
                 birth = date(int(form["year"]), int(form["month"]), int(form["day"]))
