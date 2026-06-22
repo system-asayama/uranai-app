@@ -48,6 +48,11 @@ def create_app() -> Flask:
         app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///app.db"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
+    # 相性占いのログイン要否（一時的に公開中。"1"/"true" でログイン必須に戻す）
+    app.config["AISHO_REQUIRE_LOGIN"] = (
+        os.environ.get("AISHO_REQUIRE_LOGIN", "0").lower() in ("1", "true", "yes")
+    )
+
     db.init_app(app)
 
     with app.app_context():
@@ -112,7 +117,10 @@ def admin_required(view):
 def _register_routes(app: Flask) -> None:
     @app.context_processor
     def inject_user():
-        return {"current_user": current_user()}
+        return {
+            "current_user": current_user(),
+            "aisho_requires_login": app.config["AISHO_REQUIRE_LOGIN"],
+        }
 
     @app.context_processor
     def inject_helpers():
@@ -262,9 +270,15 @@ def _register_routes(app: Flask) -> None:
         )
 
     @app.route("/aisho", methods=["GET", "POST"])
-    @login_required
     def aisho():
-        """二人の生年月日から相性を占う（ログイン必須）。"""
+        """二人の生年月日から相性を占う。
+
+        AISHO_REQUIRE_LOGIN が True のときのみログイン必須
+        （現在は一時的に未ログインでも利用可）。
+        """
+        if app.config["AISHO_REQUIRE_LOGIN"] and current_user() is None:
+            flash("ログインが必要です。", "error")
+            return redirect(url_for("login"))
         result = None
         # a_* = あなた / b_* = お相手
         form = {f"{who}_{k}": "" for who in ("a", "b")

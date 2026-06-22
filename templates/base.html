@@ -44,7 +44,7 @@
     <nav>
       <a href="{{ url_for('uranai') }}">占う</a>
       <a href="{{ url_for('uranai_list') }}">早見表</a>
-      <a href="{{ url_for('aisho') }}">相性占い{% if not current_user %} 🔒{% endif %}</a>
+      <a href="{{ url_for('aisho') }}">相性占い{% if aisho_requires_login and not current_user %} 🔒{% endif %}</a>
       {% if current_user %}
         <a href="{{ url_for('dashboard') }}">ダッシュボード</a>
         {% if current_user.is_admin %}<a href="{{ url_for('admin_users') }}">ユーザー管理</a>{% endif %}

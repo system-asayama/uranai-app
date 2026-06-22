@@ -110,3 +110,4 @@ python app.py
 | `SECRET_KEY` | セッション署名鍵。本番では必ず変更 |
 | `ADMIN_USERNAME` | 初期管理者のユーザー名 |
 | `ADMIN_PASSWORD` | 初期管理者のパスワード |
+| `AISHO_REQUIRE_LOGIN` | 相性占いをログイン必須にするか（`1`/`true` で必須、既定は未設定＝**公開**） |
