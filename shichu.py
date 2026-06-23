@@ -1324,6 +1324,98 @@ class Compatibility:
     partner_role_desc: str
     self_role_god: str         # 相手から見たあなたの通変星
     self_role_desc: str
+    seikaku_aisho: list        # 性格の相性（長文・複数段落）
+    unki_aisho: list           # 運気の相性（長文・複数段落）
+
+
+def _aisho_prose(e1, e2, branch_rel, ganggou, same_pillar,
+                 nayin_rel, na1, na2, score):
+    """相性の長文（性格の相性・運気の相性）を組み立てる。"""
+    seikaku = []
+    if score >= 72:
+        seikaku.append("お二人の性格の相性は、とても良好です。")
+    elif score >= 58:
+        seikaku.append("お二人の性格の相性は、良い部類に入ります。")
+    elif score >= 45:
+        seikaku.append("お二人の性格の相性は、歩み寄り次第で良くなっていく関係です。")
+    else:
+        seikaku.append("正直なところ、お二人の性格の相性は簡単ではありません。"
+                       "ですが、違いを理解すれば学びの多い関係になれます。")
+
+    # 日干の五行関係（方向あり）
+    if e1 == e2:
+        seikaku.append(
+            f"日干の五行がどちらも「{e1}」で、考え方や感覚がよく似ています。"
+            "価値観が近いぶん一緒にいて自然体でいられ、多くを説明しなくても"
+            "通じ合えるでしょう。ただし似た者同士ゆえ欠点まで似ていて、"
+            "同じ場面で同じようにつまずくことも。違う視点を意識的に取り入れると、"
+            "より強い関係になります。")
+    elif (e1, e2) in _GENERATE:
+        seikaku.append(
+            f"あなたの「{e1}」が、お相手の「{e2}」を育て引き立てる関係です（相生）。"
+            "あなたが自然とお相手を支え、伸ばしてあげられる、面倒を見たくなる"
+            "組み合わせ。お相手はあなたといると安心して力を発揮できます。"
+            "ただし尽くしすぎて見返りを求めると疲れてしまうので、"
+            "無理のない範囲で接するのがコツです。")
+    elif (e2, e1) in _GENERATE:
+        seikaku.append(
+            f"お相手の「{e2}」が、あなたの「{e1}」を育て引き立てる関係です（相生）。"
+            "お相手があなたを支え、成長させてくれる頼もしいご縁です。"
+            "あなたは甘えさせてもらえる立場ですが、感謝を忘れず、"
+            "もらってばかりにならないことが長続きの秘訣です。")
+    elif (e1, e2) in _CONTROL:
+        seikaku.append(
+            f"あなたの「{e1}」が、お相手の「{e2}」を抑える関係です（相剋）。"
+            "あなたが主導権を握りやすく、お相手を引っ張る場面が多いでしょう。"
+            "頼りにされる一方、強く出すぎるとお相手を萎縮させてしまいます。"
+            "お相手のペースや気持ちを尊重すると、ぐっと良い関係になります。")
+    else:
+        seikaku.append(
+            f"お相手の「{e2}」が、あなたの「{e1}」を抑える関係です（相剋）。"
+            "お相手のペースに合わせる場面が多く、ときに窮屈さや刺激を"
+            "感じるかもしれません。ですがそれは、あなたを鍛えてくれるご縁。"
+            "言いたいことは溜め込まず、対等に伝える習慣を持つとバランスが取れます。")
+
+    # 日支の関係
+    branch_text = {
+        "combine": "日支は「支合」という、自然と惹かれ合う相性。一緒にいるとしっくりきて、距離が縮まりやすい組み合わせです。",
+        "trine": "日支は「三合」という、協力して物事を進めやすい相性。同じ目標に向かうと、お互いの力が何倍にもなります。",
+        "same": "日支が同じで、生活リズムや感覚が似ています。一緒に過ごしていて、自然と居心地の良さを感じるでしょう。",
+        "clash": "日支は「冲」といって、強く惹かれ合う一方でぶつかりやすい関係。刺激的ですが、ヒートアップすると衝突します。ときには少し距離を置く時間も大切にすると長続きします。",
+        "harm": "日支は「害」といって、小さなすれ違いが起きやすい関係。悪気のない一言が引っかかることがあるので、こまめに気持ちを確認し合いましょう。",
+        "none": "日支には特別な干渉がなく、ほどよい距離感で付き合える関係です。",
+    }
+    seikaku.append(branch_text[branch_rel])
+
+    if ganggou:
+        seikaku.append("さらに日干が「干合」しており、理屈抜きで惹かれ合う、"
+                       "運命的とも言える強いご縁があります。")
+    if same_pillar:
+        seikaku.append("日柱がまったく同じで、まるで鏡のようなお二人。"
+                       "深く理解し合える反面、長所も短所もそっくりな点には注意です。")
+
+    if score >= 58:
+        seikaku.append("総じて、自然体で続けていける相性です。"
+                       "感謝を言葉にすれば、関係はいっそう深まるでしょう。")
+    elif score >= 45:
+        seikaku.append("歩み寄りを大切にすれば、時間とともに深まっていく関係です。"
+                       "相手の立場に立つ習慣が、二人の絆を育てます。")
+    else:
+        seikaku.append("違いが多いぶん、お互いを「そういう考えもある」と認め合えれば、"
+                       "刺激し合える唯一無二の関係になれます。")
+
+    # 運気の相性
+    unki = []
+    nayin_text = {
+        "same": f"納音（なっちん）がどちらも「{na1}」で、運気のリズムがよく似ています。良いときも悪いときも波長が合い、深く響き合う特別なご縁です。",
+        "same_el": f"納音「{na1}」と「{na2}」は五行が同じで、運気の波長が近いお二人。一緒にいて安心感があり、自然なペースで歩んでいけます。",
+        "gen": f"納音「{na1}」と「{na2}」は相生の関係で、一緒にいると運気を高め合えます。お互いの運を後押しし合える、発展的な組み合わせです。",
+        "ctrl": f"納音「{na1}」と「{na2}」は抑え合う関係。刺激は多いものの、運気の浮き沈みが大きくなりやすいので、相手が落ち込んでいるときこそ支え合うと吉です。",
+    }
+    unki.append(nayin_text[nayin_rel])
+    unki.append("二人で前向きに過ごす時間が増えるほど、運気は上向いていきます。"
+                "お互いを思いやる気持ちが、何よりの開運になります。")
+    return seikaku, unki
 
 
 def compatibility(fp1: FourPillars, fp2: FourPillars) -> Compatibility:
@@ -1497,6 +1589,11 @@ def compatibility(fp1: FourPillars, fp2: FourPillars) -> Compatibility:
 
     score = max(5, min(98, score))
 
+    seikaku_aisho, unki_aisho = _aisho_prose(
+        e1, e2, branch_rel, _pair(s1, s2) in _STEM_COMBINE,
+        s1 == s2 and b1 == b2, nayin_rel, na1, na2, score,
+    )
+
     if score >= 85:
         label, headline = "最高の相性", "💞 運命的なベストパートナー"
         advice = ("ほうっておいても惹かれ合う最高の縁。感謝を言葉にし、"
@@ -1538,6 +1635,8 @@ def compatibility(fp1: FourPillars, fp2: FourPillars) -> Compatibility:
         partner_role_desc=TEN_GOD_RELATION[partner_role_god],
         self_role_god=self_role_god,
         self_role_desc=TEN_GOD_RELATION[self_role_god],
+        seikaku_aisho=seikaku_aisho,
+        unki_aisho=unki_aisho,
     )
 
 
