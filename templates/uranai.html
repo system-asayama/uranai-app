@@ -187,6 +187,22 @@
   <p>{{ profile.ningen }}</p>
 </div>
 
+{% if daiun %}
+<div class="card analysis">
+  <h2 class="more-title">大運（10年ごとの運勢の流れ）</h2>
+  <p class="muted small">運勢の方向＝<strong>{{ daiun.direction }}</strong> ／ 立運＝<strong>{{ daiun.start_age }}歳</strong>から始まります。各10年間にめぐってくる運気の柱です。</p>
+  <table>
+    <thead><tr><th>年齢</th><th>干支</th><th>通変星</th><th>この10年のテーマ</th></tr></thead>
+    <tbody>
+      {% for p in daiun.periods %}
+      <tr><td>{{ p.start_age }}〜{{ p.end_age }}歳</td><td><strong>{{ p.name }}</strong></td><td>{{ p.god }}</td><td>{{ p.theme }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="muted small">※大運は性別と立春・節入りをもとに算出。節入り前後の生まれは立運が1歳ほど前後することがあります。</p>
+</div>
+{% endif %}
+
 <div class="card more">
   <h2 class="more-title">この生年月日でさらに調べる</h2>
   <p class="muted small">入力した生年月日（{{ form.year }}/{{ form.month }}/{{ form.day }}）を引き継いで占えます。</p>

@@ -1980,3 +1980,87 @@ def _biorhythm_chart_svg(points: list[BioPoint]) -> str:
         )
     parts.append("</svg>")
     return "".join(parts)
+
+
+# ===========================================================================
+# 大運（10年ごとの運勢の流れ）
+# ---------------------------------------------------------------------------
+# 進行方向: 陽年生まれの男性・陰年生まれの女性=順行 / それ以外=逆行。
+# 立運(開始年齢): 生まれてから節入りまでの日数 ÷ 3 ≒ 歳。
+# 各大運は月柱を起点に順行/逆行で干支を進め、10年ずつ巡る。
+# その干支の天干と日干の通変星で、その10年のテーマを読む。
+# ===========================================================================
+
+def _ganzhi_index(stem_index: int, branch_index: int) -> int:
+    """十干・十二支のインデックスから六十干支インデックス(0..59)を求める。"""
+    for n in range(60):
+        if n % 10 == stem_index and n % 12 == branch_index:
+            return n
+    return 0
+
+
+def _solar_term_ut_near(jd_guess: float, target: float, year: int) -> float:
+    """jd_guess 付近で太陽視黄経 = target になる UT ユリウス日を求める。"""
+    jd = jd_guess
+    for _ in range(10):
+        lam = _sun_longitude_at_ut(jd, year)
+        diff = (lam - target + 180.0) % 360.0 - 180.0
+        jd -= diff / 0.98565
+    return jd
+
+
+@dataclass
+class DaiunPeriod:
+    start_age: int
+    end_age: int
+    name: str        # 干支
+    stem: str
+    branch: str
+    god: str         # 通変星
+    theme: str
+
+
+@dataclass
+class Daiun:
+    direction: str       # 順行 / 逆行
+    start_age: int       # 立運（開始年齢）
+    periods: list        # DaiunPeriod のリスト
+
+
+def daiun(fp: FourPillars, gender: str, birth: date) -> Daiun:
+    """命式・性別・生年月日から大運（10年運）を算出する。"""
+    year_yang = (STEM_YINYANG[fp.year.stem_index] == "陽")
+    male = (gender != "female")
+    forward = (year_yang == male)   # 陽年男・陰年女=順行
+
+    jd_b = _jd_ut_midnight(birth) + (12 - 9) / 24.0   # 12:00 JST
+    lam_b = _sun_longitude_at_ut(jd_b, birth.year)
+    rel = (lam_b - 315.0) % 360.0
+    if forward:
+        target = (315.0 + (math.floor(rel / 30.0) + 1) * 30.0) % 360.0
+        jd_term = _solar_term_ut_near(jd_b + 15.0, target, birth.year)
+        days = jd_term - jd_b
+    else:
+        target = (315.0 + math.floor(rel / 30.0) * 30.0) % 360.0
+        jd_term = _solar_term_ut_near(jd_b - 15.0, target, birth.year)
+        days = jd_b - jd_term
+    start_age = max(1, round(abs(days) / 3.0))
+
+    month_idx = _ganzhi_index(fp.month.stem_index, fp.month.branch_index)
+    day_stem = fp.day.stem_index
+
+    periods = []
+    for i in range(8):
+        step = (i + 1) if forward else -(i + 1)
+        idx = (month_idx + step) % 60
+        st, br = idx % 10, idx % 12
+        god = ten_god(day_stem, st)
+        _, theme = TEN_GODS[god]
+        a0 = start_age + i * 10
+        periods.append(DaiunPeriod(
+            start_age=a0, end_age=a0 + 9,
+            name=STEMS[st] + BRANCHES[br], stem=STEMS[st], branch=BRANCHES[br],
+            god=god, theme=theme,
+        ))
+    return Daiun(direction=("順行" if forward else "逆行"),
+                 start_age=start_age, periods=periods)

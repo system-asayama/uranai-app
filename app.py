@@ -147,6 +147,7 @@ def _register_routes(app: Flask) -> None:
     def uranai():
         """生年月日（と時刻）から四柱（命式）を算出し鑑定する（ログイン不要）。"""
         result = None
+        daiun = None
         form = {"year": "", "month": "", "day": "", "hour": "", "minute": "",
                 "gender": "male"}
 
@@ -181,6 +182,7 @@ def _register_routes(app: Flask) -> None:
                 flash("未来の日付は占えません。", "error")
             else:
                 result = shichu.compute_four_pillars(birth, hour, minute or 0)
+                daiun = shichu.daiun(result, form["gender"], birth)
 
         character = (sangokushi.get_character(result.day_index)
                      if result is not None else None)
@@ -188,7 +190,7 @@ def _register_routes(app: Flask) -> None:
                    if result is not None else None)
         return render_template(
             "uranai.html", result=result, form=form,
-            character=character, profile=profile,
+            character=character, profile=profile, daiun=daiun,
         )
 
     @app.route("/uranai/list")
