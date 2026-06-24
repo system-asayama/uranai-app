@@ -1345,7 +1345,7 @@ def _aisho_prose(e1, e2, branch_rel, ganggou, same_pillar,
     seikaku = []
     if score >= 72:
         seikaku.append("お二人の性格の相性は、とても良好です。")
-    elif score >= 58:
+    elif score >= 60:
         seikaku.append("お二人の性格の相性は、良い部類に入ります。")
     elif score >= 45:
         seikaku.append("お二人の性格の相性は、歩み寄り次第で良くなっていく関係です。")
@@ -1461,7 +1461,7 @@ def _aisho_prose2(e1, e2, branch_rel, ganggou, same_pillar,
     seikaku = []
     if score >= 72:
         seikaku.append("お二人の性格の相性は、とても良好です。")
-    elif score >= 58:
+    elif score >= 60:
         seikaku.append("お二人の性格の相性は、良い部類に入ります。")
     elif score >= 45:
         seikaku.append("お二人の性格の相性は、歩み寄り次第で良くなっていく関係です。")
@@ -1473,7 +1473,7 @@ def _aisho_prose2(e1, e2, branch_rel, ganggou, same_pillar,
         seikaku.append("さらに日干が「干合」しており、理屈抜きで惹かれ合う、運命的とも言える強いご縁があります。")
     if same_pillar:
         seikaku.append("日柱がまったく同じで、まるで鏡のようなお二人。深く理解し合える反面、長所も短所もそっくりな点に注意です。")
-    if score >= 58:
+    if score >= 60:
         seikaku.append("総じて、自然体で続けていける相性です。感謝を言葉にすれば、関係はいっそう深まるでしょう。")
     elif score >= 45:
         seikaku.append("歩み寄りを大切にすれば、時間とともに深まる関係です。相手の立場に立つ習慣が、二人の絆を育てます。")
@@ -1519,7 +1519,7 @@ def _aisho_prose2(e1, e2, branch_rel, ganggou, same_pillar,
     kekkon = []
     if score >= 72:
         kekkon.append("結婚・長期的なパートナーとしての相性も良好です。価値観の土台が合うので、年月を重ねるほど安定した関係を築けるでしょう。")
-    elif score >= 55:
+    elif score >= 60:
         kekkon.append("結婚・将来の相性は良好な部類です。お互いを尊重し合えば、穏やかで長続きする関係になります。")
     elif score >= 45:
         kekkon.append("結婚・将来については、歩み寄りと対話を続けることが鍵。違いを認め合えれば、時間とともに絆が深まります。")
@@ -1730,8 +1730,9 @@ def compatibility(fp1: FourPillars, fp2: FourPillars) -> Compatibility:
     unki_aisho = _prose["unki"]
     kekkon_aisho = _prose["kekkon"]
     advice_aisho = _prose["advice"]
-    score_you = max(5, min(98, round(score * 0.5 + TEN_GOD_FAVOR[partner_role_god] * 0.5)))
-    score_partner = max(5, min(98, round(score * 0.5 + TEN_GOD_FAVOR[self_role_god] * 0.5)))
+    _delta = round((TEN_GOD_FAVOR[partner_role_god] - TEN_GOD_FAVOR[self_role_god]) * 0.3)
+    score_you = max(5, min(98, score + _delta))
+    score_partner = max(5, min(98, score - _delta))
 
     if score >= 85:
         label, headline = "最高の相性", "💞 運命的なベストパートナー"
