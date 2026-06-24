@@ -24,6 +24,7 @@ from flask import (
     url_for,
 )
 
+import character_details
 import sangokushi
 import shichu
 from models import ROLE_ADMIN, ROLE_USER, ROLES, User, db
@@ -208,6 +209,7 @@ def _register_routes(app: Flask) -> None:
         fortune = shichu.get_fortune(index)
         return render_template("character.html", ch=ch, fortune=fortune,
                                ganzhi=shichu.ganzhi_name(index),
+                               detail=character_details.DETAILS.get(index),
                                prev_i=(index - 1) % 60, next_i=(index + 1) % 60)
 
     @app.route("/team", methods=["GET", "POST"])

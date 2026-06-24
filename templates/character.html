@@ -12,6 +12,7 @@
   </div>
 </div>
 
+{% if detail %}{{ detail|safe }}{% else %}
 <div class="card">
   <h2 class="sec-title">📜 史実</h2>
   <p class="long">{{ ch.history }}</p>
@@ -38,6 +39,7 @@
   <h2 class="sec-title">🀄 この干支に選んだ理由</h2>
   <p>{{ ch.reason }}</p>
 </div>
+{% endif %}
 
 <div class="card nav-card">
   <a class="navbtn" href="{{ url_for('character', index=prev_i) }}">← 前のキャラ</a>
@@ -67,5 +69,14 @@
   .navbtn { flex:1; text-align:center; text-decoration:none; background:var(--primary);
             color:#fff; border-radius:8px; padding:10px; font-size:13px; font-weight:700; }
   .navbtn.mid { background:#868e96; }
+  .lead { font-size:18px; font-weight:800; color:var(--primary); margin:0; }
+  .pt { padding-left:20px; } .pt li { margin:8px 0; line-height:1.8; }
+  .pt.good li::marker { color:#2f9e44; } .pt.bad li::marker { color:#e8590c; }
+  .tbl-wrap { overflow-x:auto; }
+  table.dtl { width:100%; border-collapse:collapse; font-size:13px; min-width:520px; }
+  table.dtl th, table.dtl td { border:1px solid #e3e6ee; padding:8px; text-align:left; vertical-align:top; }
+  table.dtl th { background:#f1f3f5; }
+  .summary-card { background:#fff7e6; }
+  blockquote { margin:0 0 10px; padding:10px 14px; border-left:4px solid #f59f00; background:#fffaf0; font-weight:700; }
 </style>
 {% endblock %}
