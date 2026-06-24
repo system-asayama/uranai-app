@@ -2,7 +2,7 @@
 {% block title %}{{ ch.name }}｜三国志占い{% endblock %}
 {% block content %}
 <div class="card hero" style="--fc: {{ ch.color }}">
-  <img class="hero-img" src="{{ char_url(ch.index) }}" alt="{{ ch.name }}" width="200" height="200">
+  <img class="hero-img" src="{{ char_url(ch.index) }}" alt="{{ ch.name }}">
   <div class="hero-name">{{ ch.name }}</div>
   <div class="hero-yomi">{{ ch.yomi }}</div>
   <div class="hero-badges">
@@ -47,9 +47,9 @@
 
 <style>
   .hero { text-align:center; color:#fff; background:linear-gradient(135deg, var(--fc), #1a1a2e); }
-  .hero-img { width:200px; height:200px; border-radius:50%; margin:6px auto 8px; display:block;
-              border:3px solid rgba(255,255,255,.55); box-shadow:0 6px 20px rgba(0,0,0,.35);
-              background:#15151f; object-fit:cover; object-position:50% 18%; }
+  .hero-img { display:block; margin:6px auto 10px; max-width:300px; width:100%; height:auto;
+              border-radius:12px; border:3px solid rgba(255,255,255,.55);
+              box-shadow:0 6px 20px rgba(0,0,0,.35); background:#15151f; }
   .hero-name { font-size:48px; font-weight:900; letter-spacing:5px; }
   .hero-yomi { font-size:14px; opacity:.85; margin-bottom:12px; }
   .hero-badges { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
