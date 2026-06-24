@@ -199,6 +199,17 @@ def _register_routes(app: Flask) -> None:
         rows = list(zip(shichu.all_fortunes(), sangokushi.all_characters()))
         return render_template("uranai_list.html", rows=rows)
 
+    @app.route("/character/<int:index>")
+    def character(index):
+        """三国志キャラの専用ページ（史実・性格・干支の割り当て理由）。"""
+        if not 0 <= index < 60:
+            return ("not found", 404)
+        ch = sangokushi.get_character(index)
+        fortune = shichu.get_fortune(index)
+        return render_template("character.html", ch=ch, fortune=fortune,
+                               ganzhi=shichu.ganzhi_name(index),
+                               prev_i=(index - 1) % 60, next_i=(index + 1) % 60)
+
     @app.route("/team", methods=["GET", "POST"])
     def team():
         """複数メンバーの五行からチームビルディングを分析する（ログイン不要）。"""

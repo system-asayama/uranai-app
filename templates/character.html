@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}{{ ch.name }}｜三国志占い{% endblock %}
+{% block content %}
+<div class="card hero" style="--fc: {{ ch.color }}">
+  <img class="hero-img" src="{{ char_url(ch.index) }}" alt="{{ ch.name }}" width="200" height="200">
+  <div class="hero-name">{{ ch.name }}</div>
+  <div class="hero-yomi">{{ ch.yomi }}</div>
+  <div class="hero-badges">
+    <span class="faction">{{ ch.faction }}</span>
+    <span class="title">{{ ch.title }}</span>
+    <span class="ganzhi-badge">日柱 {{ ganzhi }}・No.{{ ch.index + 1 }}/60</span>
+  </div>
+</div>
+
+<div class="card">
+  <h2 class="sec-title">📜 史実</h2>
+  <p class="long">{{ ch.history }}</p>
+</div>
+
+<div class="card">
+  <h2 class="sec-title">🔮 この干支タイプの性格</h2>
+  <p class="catch">「{{ fortune.catch }}」</p>
+  <div class="tags">
+    <span class="tag">五行：{{ fortune.element }}（{{ fortune.yinyang }}）</span>
+    <span class="tag">十二支：{{ fortune.animal }}</span>
+  </div>
+  <h3>🌱 性格・本質</h3>
+  <p>{{ fortune.seikaku }}</p>
+  <h3>💼 仕事・才能</h3>
+  <p>{{ fortune.shigoto }}</p>
+  <h3>💖 恋愛・対人</h3>
+  <p>{{ fortune.renai }}</p>
+  <h3>✨ ラッキーポイント</h3>
+  <p>{{ fortune.lucky }}</p>
+</div>
+
+<div class="card">
+  <h2 class="sec-title">🀄 この干支に選んだ理由</h2>
+  <p>{{ ch.reason }}</p>
+</div>
+
+<div class="card nav-card">
+  <a class="navbtn" href="{{ url_for('character', index=prev_i) }}">← 前のキャラ</a>
+  <a class="navbtn mid" href="{{ url_for('uranai_list') }}">早見表に戻る</a>
+  <a class="navbtn" href="{{ url_for('character', index=next_i) }}">次のキャラ →</a>
+</div>
+
+<style>
+  .hero { text-align:center; color:#fff; background:linear-gradient(135deg, var(--fc), #1a1a2e); }
+  .hero-img { width:200px; height:200px; border-radius:50%; margin:6px auto 8px; display:block;
+              border:3px solid rgba(255,255,255,.55); box-shadow:0 6px 20px rgba(0,0,0,.35);
+              background:#15151f; object-fit:cover; object-position:50% 18%; }
+  .hero-name { font-size:48px; font-weight:900; letter-spacing:5px; }
+  .hero-yomi { font-size:14px; opacity:.85; margin-bottom:12px; }
+  .hero-badges { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+  .hero-badges span { border-radius:999px; padding:4px 14px; font-size:13px; font-weight:700; }
+  .hero-badges .faction { background:#fff; color:var(--fc); }
+  .hero-badges .title { background:rgba(255,255,255,.2); }
+  .hero-badges .ganzhi-badge { background:rgba(0,0,0,.25); }
+  .sec-title { font-size:18px; margin-top:0; }
+  .long { line-height:1.9; }
+  .catch { font-size:18px; font-weight:700; color:var(--primary); }
+  .card h3 { font-size:16px; margin:14px 0 6px; }
+  .tags { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:6px; }
+  .tag { background:#f1f3f5; border-radius:999px; padding:3px 12px; font-size:13px; }
+  .nav-card { display:flex; gap:8px; justify-content:space-between; }
+  .navbtn { flex:1; text-align:center; text-decoration:none; background:var(--primary);
+            color:#fff; border-radius:8px; padding:10px; font-size:13px; font-weight:700; }
+  .navbtn.mid { background:#868e96; }
+</style>
+{% endblock %}

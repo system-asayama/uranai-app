@@ -14,7 +14,7 @@
 
 <div class="grid">
   {% for f, ch in rows %}
-  <div class="card mini" style="border-left-color: {{ ch.color }}">
+  <a class="card mini" href="{{ url_for('character', index=ch.index) }}" style="border-left-color: {{ ch.color }}; text-decoration:none; color:inherit;">
     <div class="mini-head">
       <span class="no">No.{{ f.index + 1 }}・{{ f.name }}</span>
       <span class="faction" style="background: {{ ch.color }}">{{ ch.faction }}</span>
@@ -28,7 +28,7 @@
       </div>
     </div>
     <p class="catch">{{ f.catch }}</p>
-  </div>
+  </a>
   {% endfor %}
 </div>
 
