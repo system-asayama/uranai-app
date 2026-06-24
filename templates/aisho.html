@@ -72,11 +72,17 @@
     </div>
   </div>
 
-  <div class="score-wrap">
-    <div class="score-bar"><span style="width: {{ c.score }}%"></span></div>
-    <div class="score-num">{{ c.score }}<span>点</span></div>
+  <div class="two-score">
+    <div class="ts">
+      <div class="ts-l">あなたから見た</div>
+      <div class="ts-n">{{ c.score_you }}<span>点</span></div>
+    </div>
+    <div class="ts">
+      <div class="ts-l">相手から見た</div>
+      <div class="ts-n">{{ c.score_partner }}<span>点</span></div>
+    </div>
   </div>
-  <div class="rank">相性ランク：<strong>{{ c.label }}</strong></div>
+  <div class="rank">総合相性ランク：<strong>{{ c.label }}</strong>（{{ c.score }}点）</div>
 </div>
 
 <div class="card">
@@ -85,8 +91,23 @@
 </div>
 
 <div class="card">
+  <h2 class="meishiki-title">恋愛・愛情の相性</h2>
+  {% for p in c.renai_aisho %}<p class="long">{{ p }}</p>{% endfor %}
+</div>
+
+<div class="card">
   <h2 class="meishiki-title">運気の相性</h2>
   {% for p in c.unki_aisho %}<p class="long">{{ p }}</p>{% endfor %}
+</div>
+
+<div class="card">
+  <h2 class="meishiki-title">結婚・将来の相性</h2>
+  {% for p in c.kekkon_aisho %}<p class="long">{{ p }}</p>{% endfor %}
+</div>
+
+<div class="card">
+  <h2 class="meishiki-title">長続きのためのアドバイス</h2>
+  {% for p in c.advice_aisho %}<p class="long">{{ p }}</p>{% endfor %}
 </div>
 
 <div class="card">
@@ -171,6 +192,11 @@
   .card h3 { font-size:16px; margin:16px 0 6px; }
   .meishiki-title { font-size:18px; margin-top:0; }
   .long { line-height:1.85; margin:10px 0; }
+  .two-score { display:flex; gap:14px; justify-content:center; max-width:420px; margin:0 auto; }
+  .ts { flex:1; background:rgba(255,255,255,.15); border-radius:12px; padding:10px; }
+  .ts-l { font-size:12px; color:#f3d9ee; }
+  .ts-n { font-size:32px; font-weight:800; }
+  .ts-n span { font-size:14px; font-weight:600; }
   .persp { margin:14px 0; }
   .persp-head { display:flex; align-items:baseline; gap:10px; }
   .persp-name { font-weight:700; font-size:15px; }
