@@ -47,6 +47,7 @@
       <a href="{{ url_for('aisho') }}">相性占い{% if aisho_requires_login and not current_user %} 🔒{% endif %}</a>
       <a href="{{ url_for('team') }}">チーム診断</a>
       <a href="{{ url_for('biorhythm') }}">バイオリズム</a>
+      <a href="{{ url_for('about') }}">用語解説</a>
       {% if current_user %}
         <a href="{{ url_for('dashboard') }}">ダッシュボード</a>
         {% if current_user.is_admin %}<a href="{{ url_for('admin_users') }}">ユーザー管理</a>{% endif %}

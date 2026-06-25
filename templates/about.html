@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}用語解説｜三国志占い{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>📖 用語解説</h1>
+  <p class="muted">この占いで使う「五行」「十干」「十二支」の意味をまとめました。鑑定結果を読み解く手がかりにしてください。</p>
+</div>
+
+<div class="card">
+  <h2 class="sec-title">五行（ごぎょう）— 木・火・土・金・水</h2>
+  <p class="muted small">万物を5つの性質に分けた考え方。命式の五行バランスや相性の土台です。</p>
+  {% for g in gogyo %}
+  <div class="row">
+    <div class="circle" style="background: {{ g.color }}">{{ g.el }}</div>
+    <p>{{ g.desc }}</p>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="card">
+  <h2 class="sec-title">十干（じっかん）— あなたの「日干」10タイプ</h2>
+  <p class="muted small">生まれ日の天干＝<strong>あなたの本体（日主）</strong>。性格分析の中心となる10タイプです。</p>
+  {% for p in jikkan %}
+  <div class="row">
+    <div class="circle" style="background: {{ p.color }}">{{ p.stem }}</div>
+    <div>
+      <div class="jk-head"><strong>{{ p.stem }}（{{ p.yomi }}）</strong>
+        <span class="badge">{{ p.element }}{{ p.yinyang }}・{{ p.type_name }}タイプ</span></div>
+      <p class="small">{{ p.seikaku[0] }}</p>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="card">
+  <h2 class="sec-title">十二支（じゅうにし）— 子・丑・寅…亥</h2>
+  <p class="muted small">命式の「地支」や相性（支合・冲など）で使います。</p>
+  <div class="grid">
+    {% for j in junishi %}
+    <div class="jcard" style="border-top:4px solid {{ j.color }}">
+      <div class="jname">{{ j.branch }}<span>（{{ j.yomi }}・{{ j.animal }}／{{ j.el }}）</span></div>
+      <p class="small">{{ j.desc }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<style>
+  .sec-title { font-size:18px; margin-top:0; }
+  .small { font-size:13px; }
+  .row { display:flex; gap:12px; align-items:flex-start; margin:10px 0; border-bottom:1px solid #f1f3f5; padding-bottom:10px; }
+  .row p { margin:0; line-height:1.7; }
+  .circle { width:42px; height:42px; min-width:42px; border-radius:50%; color:#fff; font-weight:800; font-size:20px; display:flex; align-items:center; justify-content:center; }
+  .jk-head { margin-bottom:2px; }
+  .badge { font-size:12px; background:#f1f3f5; border-radius:999px; padding:2px 10px; margin-left:6px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; }
+  .jcard { background:#fff; border-radius:10px; padding:12px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+  .jname { font-size:20px; font-weight:800; }
+  .jname span { font-size:11px; color:var(--muted); font-weight:400; }
+  .jcard p { margin:6px 0 0; }
+</style>
+{% endblock %}

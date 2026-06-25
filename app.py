@@ -212,6 +212,38 @@ def _register_routes(app: Flask) -> None:
                                detail=character_details.DETAILS.get(index),
                                prev_i=(index - 1) % 60, next_i=(index + 1) % 60)
 
+    @app.route("/about")
+    def about():
+        """用語解説（五行・十干・十二支）ページ。"""
+        gogyo_src = [
+            ("木", "成長・向上・リーダー。まっすぐ伸びる樹木のように、向上心と発展の力。"),
+            ("火", "情熱・発信・華やかさ。燃える炎のように、明るさと表現力。"),
+            ("土", "安定・信頼・包容。大地のように、人を受け止め育てる力。"),
+            ("金", "決断・規律・美意識。研いだ刃のように、けじめと実行力。"),
+            ("水", "知恵・柔軟・流れ。水のように、知性と順応性。"),
+        ]
+        gogyo = [{"el": e, "color": shichu.ELEMENT_COLOR[e], "desc": d} for e, d in gogyo_src]
+        jikkan = [shichu.day_master_profile(i) for i in range(10)]
+        jd = [
+            "知的で機転が利き、社交的。発展運に恵まれる",
+            "真面目で粘り強い努力家。地道にコツコツ",
+            "勇敢で行動的、正義感が強いリーダー気質",
+            "温和で協調的、平和を好み家庭的",
+            "スケールが大きく理想家。カリスマとプライド",
+            "知的で洞察力が鋭く、探究心が強い",
+            "明るく行動的でスピード感がある",
+            "優しく協調的で芸術的センスがある",
+            "器用で頭の回転が速く、多才",
+            "几帳面で勤勉、美意識が高い",
+            "忠実で義理堅く正直、責任感が強い",
+            "純粋でまっすぐ、情に厚く猪突猛進",
+        ]
+        junishi = [{"branch": shichu.BRANCHES[i], "yomi": shichu.BRANCH_YOMI[i],
+                    "animal": shichu.BRANCH_ANIMAL[i], "el": shichu.BRANCH_ELEMENT[i],
+                    "color": shichu.ELEMENT_COLOR[shichu.BRANCH_ELEMENT[i]],
+                    "desc": jd[i]} for i in range(12)]
+        return render_template("about.html", gogyo=gogyo, jikkan=jikkan, junishi=junishi)
+
     @app.route("/team", methods=["GET", "POST"])
     def team():
         """複数メンバーの五行からチームビルディングを分析する（ログイン不要）。"""
