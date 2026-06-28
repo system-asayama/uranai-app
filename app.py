@@ -145,8 +145,9 @@ def _register_routes(app: Flask) -> None:
         return redirect(url_for("uranai"))
 
     @app.route("/uranai", methods=["GET", "POST"])
+    @login_required
     def uranai():
-        """生年月日（と時刻）から四柱（命式）を算出し鑑定する（ログイン不要）。"""
+        """生年月日（と時刻）から四柱（命式）を算出し鑑定する（ログイン必須）。"""
         result = None
         daiun = None
         form = {"year": "", "month": "", "day": "", "hour": "", "minute": "",
@@ -195,12 +196,14 @@ def _register_routes(app: Flask) -> None:
         )
 
     @app.route("/uranai/list")
+    @login_required
     def uranai_list():
         """六十干支と三国志キャラの一覧（早見表）。"""
         rows = list(zip(shichu.all_fortunes(), sangokushi.all_characters()))
         return render_template("uranai_list.html", rows=rows)
 
     @app.route("/character/<int:index>")
+    @login_required
     def character(index):
         """三国志キャラの専用ページ（史実・性格・干支の割り当て理由）。"""
         if not 0 <= index < 60:
@@ -213,6 +216,7 @@ def _register_routes(app: Flask) -> None:
                                prev_i=(index - 1) % 60, next_i=(index + 1) % 60)
 
     @app.route("/about")
+    @login_required
     def about():
         """用語解説（五行・十干・十二支）ページ。"""
         gogyo_src = [
@@ -245,6 +249,7 @@ def _register_routes(app: Flask) -> None:
         return render_template("about.html", gogyo=gogyo, jikkan=jikkan, junishi=junishi)
 
     @app.route("/team", methods=["GET", "POST"])
+    @login_required
     def team():
         """複数メンバーの五行からチームビルディングを分析する（ログイン不要）。"""
         slots = 6
@@ -295,6 +300,7 @@ def _register_routes(app: Flask) -> None:
                                element_team=shichu.ELEMENT_TEAM)
 
     @app.route("/biorhythm", methods=["GET", "POST"])
+    @login_required
     def biorhythm():
         """十干（通変星）によるバイオリズム分析（日/月/年・ログイン不要）。"""
         result = None
@@ -411,15 +417,9 @@ def _register_routes(app: Flask) -> None:
         )
 
     @app.route("/aisho", methods=["GET", "POST"])
+    @login_required
     def aisho():
-        """二人の生年月日から相性を占う。
-
-        AISHO_REQUIRE_LOGIN が True のときのみログイン必須
-        （現在は一時的に未ログインでも利用可）。
-        """
-        if app.config["AISHO_REQUIRE_LOGIN"] and current_user() is None:
-            flash("ログインが必要です。", "error")
-            return redirect(url_for("login"))
+        """二人の生年月日から相性を占う（ログイン必須）。"""
         result = None
         # a_* = あなた / b_* = お相手
         form = {f"{who}_{k}": "" for who in ("a", "b")
