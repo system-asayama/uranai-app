@@ -14,8 +14,10 @@
 
 {% if detail %}{{ detail|safe }}{% else %}
 <div class="card">
-  <h2 class="sec-title">📜 史実</h2>
-  <p class="long">{{ ch.history }}</p>
+  <h2 class="sec-title">📜 史実・エピソード</h2>
+  {% for para in ch.history.split('\n\n') %}
+  <p class="long">{{ para }}</p>
+  {% endfor %}
 </div>
 
 <div class="card">
