@@ -27,6 +27,7 @@ from flask import (
 import character_details
 import sangokushi
 import shichu
+import timeline
 from models import ROLE_ADMIN, ROLE_USER, ROLES, User, db
 
 
@@ -247,6 +248,12 @@ def _register_routes(app: Flask) -> None:
                     "color": shichu.ELEMENT_COLOR[shichu.BRANCH_ELEMENT[i]],
                     "desc": jd[i]} for i in range(12)]
         return render_template("about.html", gogyo=gogyo, jikkan=jikkan, junishi=junishi)
+
+    @app.route("/timeline")
+    @login_required
+    def timeline_page():
+        """三国志の年表（時代区分ごとの主な戦い・出来事）ページ。"""
+        return render_template("timeline.html", eras=timeline.ERAS)
 
     @app.route("/team", methods=["GET", "POST"])
     @login_required

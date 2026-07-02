@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}三国志 年表｜三国志占い{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>📜 三国志 年表</h1>
+  <p class="muted">黄巾の乱（184年）から呉の滅亡（280年）まで、三国志のおもな
+  戦い・出来事を時代の流れで振り返ります。占いに登場する武将たちが生きた
+  乱世の全体像をつかむ手がかりに。</p>
+</div>
+
+{% for era in eras %}
+<div class="card era">
+  <h2 class="era-title">{{ era.title }}</h2>
+  <ol class="tl">
+    {% for ev in era.events %}
+    <li class="tl-item">
+      <span class="tl-year">{{ ev.year }}</span>
+      <div class="tl-body">
+        <div class="tl-name">{{ ev.title }}</div>
+        <p class="tl-desc">{{ ev.desc }}</p>
+      </div>
+    </li>
+    {% endfor %}
+  </ol>
+</div>
+{% endfor %}
+
+<style>
+  .era-title { font-size:18px; margin:0 0 14px; padding-bottom:10px;
+               border-bottom:2px solid var(--primary); color:var(--primary); }
+  .tl { list-style:none; margin:0; padding:0; position:relative; }
+  /* 縦のタイムライン軸 */
+  .tl::before { content:""; position:absolute; left:70px; top:6px; bottom:6px;
+                width:2px; background:#dfe3ee; }
+  .tl-item { position:relative; display:flex; gap:16px; padding:0 0 18px; }
+  .tl-item:last-child { padding-bottom:0; }
+  .tl-year { flex:0 0 56px; text-align:right; font-weight:800;
+             color:var(--primary); font-size:15px; padding-top:1px; }
+  /* 軸上のドット */
+  .tl-body { position:relative; flex:1; padding-left:22px; }
+  .tl-body::before { content:""; position:absolute; left:-15px; top:5px;
+                     width:11px; height:11px; border-radius:50%;
+                     background:var(--primary); border:2px solid #fff;
+                     box-shadow:0 0 0 2px #dfe3ee; }
+  .tl-name { font-weight:700; font-size:15px; margin-bottom:3px; }
+  .tl-desc { margin:0; font-size:14px; line-height:1.8; color:#333; }
+  @media (max-width:480px) {
+    .tl::before { left:52px; }
+    .tl-year { flex-basis:42px; font-size:14px; }
+  }
+</style>
+{% endblock %}
