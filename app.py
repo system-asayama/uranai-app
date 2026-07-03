@@ -252,8 +252,17 @@ def _register_routes(app: Flask) -> None:
     @app.route("/timeline")
     @login_required
     def timeline_page():
-        """三国志の年表（時代区分ごとの主な戦い・出来事）ページ。"""
-        return render_template("timeline.html", eras=timeline.ERAS)
+        """三国志の年表（時代区分ごとの主な戦い・出来事＋関連武将）ページ。"""
+        name2idx = {c.name: c.index for c in sangokushi.all_characters()}
+        eras = []
+        for era in timeline.ERAS:
+            events = []
+            for ev in era["events"]:
+                links = [{"name": n, "index": name2idx[n]}
+                         for n in ev.get("chars", []) if n in name2idx]
+                events.append({**ev, "links": links})
+            eras.append({"title": era["title"], "events": events})
+        return render_template("timeline.html", eras=eras)
 
     @app.route("/team", methods=["GET", "POST"])
     @login_required

@@ -18,6 +18,13 @@
       <div class="tl-body">
         <div class="tl-name">{{ ev.title }}</div>
         <p class="tl-desc">{{ ev.desc }}</p>
+        {% if ev.links %}
+        <div class="tl-chars">
+          {% for l in ev.links %}
+          <a class="tl-chip" href="{{ url_for('character', index=l.index) }}">{{ l.name }}</a>
+          {% endfor %}
+        </div>
+        {% endif %}
       </div>
     </li>
     {% endfor %}
@@ -44,6 +51,12 @@
                      box-shadow:0 0 0 2px #dfe3ee; }
   .tl-name { font-weight:700; font-size:15px; margin-bottom:3px; }
   .tl-desc { margin:0; font-size:14px; line-height:1.8; color:#333; }
+  /* 関連武将チップ（詳細ページへリンク） */
+  .tl-chars { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .tl-chip { text-decoration:none; font-size:12px; font-weight:700;
+             color:var(--primary); background:#eef1fb; border:1px solid #d7ddf5;
+             border-radius:999px; padding:3px 10px; line-height:1.6; }
+  .tl-chip:hover { background:var(--primary); color:#fff; border-color:var(--primary); }
   @media (max-width:480px) {
     .tl::before { left:52px; }
     .tl-year { flex-basis:42px; font-size:14px; }
