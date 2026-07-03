@@ -211,9 +211,21 @@ def _register_routes(app: Flask) -> None:
             return ("not found", 404)
         ch = sangokushi.get_character(index)
         fortune = shichu.get_fortune(index)
+
+        # この武将が関わった年表の出来事（/timeline のアンカーへリンク）
+        appearances = []
+        counter = 0
+        for era in timeline.ERAS:
+            for ev in era["events"]:
+                if ch.name in ev.get("chars", []):
+                    appearances.append({"year": ev["year"], "title": ev["title"],
+                                        "anchor": f"ev{counter}"})
+                counter += 1
+
         return render_template("character.html", ch=ch, fortune=fortune,
                                ganzhi=shichu.ganzhi_name(index),
                                detail=character_details.DETAILS.get(index),
+                               appearances=appearances,
                                prev_i=(index - 1) % 60, next_i=(index + 1) % 60)
 
     @app.route("/about")
@@ -255,12 +267,14 @@ def _register_routes(app: Flask) -> None:
         """三国志の年表（時代区分ごとの主な戦い・出来事＋関連武将）ページ。"""
         name2idx = {c.name: c.index for c in sangokushi.all_characters()}
         eras = []
+        counter = 0
         for era in timeline.ERAS:
             events = []
             for ev in era["events"]:
                 links = [{"name": n, "index": name2idx[n]}
                          for n in ev.get("chars", []) if n in name2idx]
-                events.append({**ev, "links": links})
+                events.append({**ev, "links": links, "anchor": f"ev{counter}"})
+                counter += 1
             eras.append({"title": era["title"], "events": events})
         return render_template("timeline.html", eras=eras)
 

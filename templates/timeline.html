@@ -13,7 +13,7 @@
   <h2 class="era-title">{{ era.title }}</h2>
   <ol class="tl">
     {% for ev in era.events %}
-    <li class="tl-item">
+    <li class="tl-item" id="{{ ev.anchor }}">
       <span class="tl-year">{{ ev.year }}</span>
       <div class="tl-body">
         <div class="tl-name">{{ ev.title }}</div>
@@ -39,7 +39,8 @@
   /* 縦のタイムライン軸 */
   .tl::before { content:""; position:absolute; left:70px; top:6px; bottom:6px;
                 width:2px; background:#dfe3ee; }
-  .tl-item { position:relative; display:flex; gap:16px; padding:0 0 18px; }
+  .tl-item { position:relative; display:flex; gap:16px; padding:0 0 18px;
+             scroll-margin-top:72px; }
   .tl-item:last-child { padding-bottom:0; }
   .tl-year { flex:0 0 56px; text-align:right; font-weight:800;
              color:var(--primary); font-size:15px; padding-top:1px; }

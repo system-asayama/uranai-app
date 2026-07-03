@@ -43,6 +43,21 @@
 </div>
 {% endif %}
 
+{% if appearances %}
+<div class="card">
+  <h2 class="sec-title">🗓️ 年表での登場</h2>
+  <p class="muted">{{ ch.name }}が関わった主な出来事です。タップで年表の該当箇所へ移動します。</p>
+  <ul class="appear">
+    {% for a in appearances %}
+    <li><a href="{{ url_for('timeline_page') }}#{{ a.anchor }}">
+      <span class="ap-year">{{ a.year }}</span>
+      <span class="ap-title">{{ a.title }}</span>
+    </a></li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
 <div class="card nav-card">
   <a class="navbtn" href="{{ url_for('character', index=prev_i) }}">← 前のキャラ</a>
   <a class="navbtn mid" href="{{ url_for('uranai_list') }}">早見表に戻る</a>
@@ -62,6 +77,14 @@
   .hero-badges .title { background:rgba(255,255,255,.2); }
   .hero-badges .ganzhi-badge { background:rgba(0,0,0,.25); }
   .sec-title { font-size:18px; margin-top:0; }
+  .appear { list-style:none; margin:10px 0 0; padding:0; }
+  .appear li { border-top:1px solid #eee; }
+  .appear li:first-child { border-top:none; }
+  .appear a { display:flex; align-items:baseline; gap:12px; padding:10px 4px;
+              text-decoration:none; color:var(--text); }
+  .appear a:hover { background:#f1f3f9; border-radius:8px; }
+  .ap-year { flex:0 0 44px; font-weight:800; color:var(--primary); font-size:14px; }
+  .ap-title { font-size:14px; font-weight:600; }
   .long { line-height:1.9; }
   .catch { font-size:18px; font-weight:700; color:var(--primary); }
   .card h3 { font-size:16px; margin:14px 0 6px; }
