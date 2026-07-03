@@ -219,7 +219,8 @@ def _register_routes(app: Flask) -> None:
             for ev in era["events"]:
                 if ch.name in ev.get("chars", []):
                     appearances.append({"year": ev["year"], "title": ev["title"],
-                                        "anchor": f"ev{counter}"})
+                                        "eid": counter,
+                                        "role": ev.get("roles", {}).get(ch.name, "")})
                 counter += 1
 
         return render_template("character.html", ch=ch, fortune=fortune,
@@ -273,10 +274,28 @@ def _register_routes(app: Flask) -> None:
             for ev in era["events"]:
                 links = [{"name": n, "index": name2idx[n]}
                          for n in ev.get("chars", []) if n in name2idx]
-                events.append({**ev, "links": links, "anchor": f"ev{counter}"})
+                events.append({**ev, "links": links, "eid": counter})
                 counter += 1
             eras.append({"title": era["title"], "events": events})
         return render_template("timeline.html", eras=eras)
+
+    @app.route("/timeline/<int:eid>")
+    @login_required
+    def battle(eid):
+        """年表の個別の戦い・出来事の詳細ページ（解説＋各武将の活躍）。"""
+        flat = [(era, ev) for era in timeline.ERAS for ev in era["events"]]
+        if not 0 <= eid < len(flat):
+            return ("not found", 404)
+        era, ev = flat[eid]
+        name2idx = {c.name: c.index for c in sangokushi.all_characters()}
+        roles = ev.get("roles", {})
+        chars = [{"name": n, "index": name2idx.get(n), "role": roles.get(n, "")}
+                 for n in ev.get("chars", [])]
+        return render_template(
+            "battle.html", era=era, ev=ev, chars=chars, eid=eid,
+            prev_eid=(eid - 1 if eid > 0 else None),
+            next_eid=(eid + 1 if eid < len(flat) - 1 else None),
+        )
 
     @app.route("/team", methods=["GET", "POST"])
     @login_required

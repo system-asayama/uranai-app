@@ -13,10 +13,10 @@
   <h2 class="era-title">{{ era.title }}</h2>
   <ol class="tl">
     {% for ev in era.events %}
-    <li class="tl-item" id="{{ ev.anchor }}">
+    <li class="tl-item" id="ev{{ ev.eid }}">
       <span class="tl-year">{{ ev.year }}</span>
       <div class="tl-body">
-        <div class="tl-name">{{ ev.title }}</div>
+        <a class="tl-name" href="{{ url_for('battle', eid=ev.eid) }}">{{ ev.title }} ›</a>
         <p class="tl-desc">{{ ev.desc }}</p>
         {% if ev.links %}
         <div class="tl-chars">
@@ -50,7 +50,9 @@
                      width:11px; height:11px; border-radius:50%;
                      background:var(--primary); border:2px solid #fff;
                      box-shadow:0 0 0 2px #dfe3ee; }
-  .tl-name { font-weight:700; font-size:15px; margin-bottom:3px; }
+  .tl-name { display:inline-block; font-weight:700; font-size:15px;
+             margin-bottom:3px; color:var(--primary); text-decoration:none; }
+  .tl-name:hover { text-decoration:underline; }
   .tl-desc { margin:0; font-size:14px; line-height:1.8; color:#333; }
   /* 関連武将チップ（詳細ページへリンク） */
   .tl-chars { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }

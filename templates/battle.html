@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}{{ ev.title }}｜三国志 年表{% endblock %}
+{% block content %}
+<div class="card battle-hero">
+  <div class="bh-era">{{ era.title }}</div>
+  <div class="bh-headline">
+    <span class="bh-year">{{ ev.year }}</span>
+    <h1 class="bh-title">{{ ev.title }}</h1>
+  </div>
+</div>
+
+<div class="card">
+  <h2 class="sec-title">⚔️ 戦いの詳細</h2>
+  <p class="long">{{ ev.detail }}</p>
+</div>
+
+{% if chars %}
+<div class="card">
+  <h2 class="sec-title">🎭 登場した武将の活躍</h2>
+  <p class="muted">名前をタップすると各武将のプロフィール・占いページへ移動します。</p>
+  <ul class="roles">
+    {% for c in chars %}
+    <li class="role-item">
+      {% if c.index is not none %}
+      <a class="role-face" href="{{ url_for('character', index=c.index) }}">
+        <img src="{{ char_url(c.index) }}" alt="{{ c.name }}">
+      </a>
+      {% endif %}
+      <div class="role-body">
+        {% if c.index is not none %}
+        <a class="role-name" href="{{ url_for('character', index=c.index) }}">{{ c.name }} ›</a>
+        {% else %}
+        <span class="role-name">{{ c.name }}</span>
+        {% endif %}
+        <p class="role-text">{{ c.role }}</p>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<div class="card nav-card">
+  {% if prev_eid is not none %}
+  <a class="navbtn" href="{{ url_for('battle', eid=prev_eid) }}">← 前の出来事</a>
+  {% else %}<span class="navbtn disabled">←</span>{% endif %}
+  <a class="navbtn mid" href="{{ url_for('timeline_page') }}#ev{{ eid }}">年表に戻る</a>
+  {% if next_eid is not none %}
+  <a class="navbtn" href="{{ url_for('battle', eid=next_eid) }}">次の出来事 →</a>
+  {% else %}<span class="navbtn disabled">→</span>{% endif %}
+</div>
+
+<style>
+  .battle-hero { color:#fff; background:linear-gradient(135deg, var(--primary), #1a1a2e); }
+  .bh-era { font-size:13px; opacity:.85; font-weight:700; margin-bottom:8px; }
+  .bh-headline { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
+  .bh-year { font-size:30px; font-weight:900; letter-spacing:1px; }
+  .bh-title { margin:0; font-size:24px; font-weight:900; }
+  .sec-title { font-size:18px; margin-top:0; }
+  .long { line-height:1.95; }
+  .roles { list-style:none; margin:12px 0 0; padding:0; }
+  .role-item { display:flex; gap:12px; padding:14px 0; border-top:1px solid #eee; }
+  .role-item:first-child { border-top:none; }
+  .role-face { flex:0 0 56px; }
+  .role-face img { width:56px; height:56px; object-fit:cover; border-radius:10px;
+                   border:2px solid #e5e8f2; background:#15151f; display:block; }
+  .role-body { flex:1; }
+  .role-name { display:inline-block; font-weight:800; font-size:15px;
+               color:var(--primary); text-decoration:none; margin-bottom:4px; }
+  .role-name:hover { text-decoration:underline; }
+  .role-text { margin:0; font-size:14px; line-height:1.8; color:#333; }
+  .nav-card { display:flex; gap:8px; justify-content:space-between; }
+  .navbtn { flex:1; text-align:center; text-decoration:none; background:var(--primary);
+            color:#fff; border-radius:8px; padding:10px; font-size:13px; font-weight:700; }
+  .navbtn.mid { background:#868e96; }
+  .navbtn.disabled { background:#ced4da; pointer-events:none; }
+</style>
+{% endblock %}
